@@ -1,6 +1,6 @@
 # Kenya model setup
 #set the file path to the main folder <- change here and all other should be read in. 
-setwd("~/Documents/GitHub/NextGenFlu/")
+setwd("~/Documents/GitHub/NextGenFlu_Kenya/")
 library(here)
 library(dplyr)
 library(fluEvidenceSynthesis)
