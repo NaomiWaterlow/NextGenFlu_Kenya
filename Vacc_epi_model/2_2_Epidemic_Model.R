@@ -192,44 +192,44 @@ total_cases_time_temp <- as.data.frame(total_cases_time_temp)
 # plot
 total_cases_time_temp$epidemic <- as.character(total_cases_time_temp$epidemic)
 total_cases_time_temp <- data.table(total_cases_time_temp)
-
-ghm<- total_cases_time_temp[]
-
-total_cases_time_temp <- data.frame(total_cases_time_temp)
-ghm$sample <- as.factor(ghm$sample)
-ghm$scenario <- as.factor(ghm$scenario)
-ghm$epidemic <- as.factor(ghm$epidemic)
-ghm <- as.data.table(ghm)
- ghml <- ghm[epidemic ==25]
- ghml <- ghm[epidemic ==38]
-ghm_m <- melt.data.table(ghml, id.vars = c("sample",  "epidemic", "scenario", "Date",
-                               "Virus"), measure.vars = c("V1", "V2", "V3", "V4", "V5",
-                                                          "V6", "V7"))
-  #ghm_m <- ghm_m[sample %in% set_of_sampels]
-ggplot(ghm_m,aes(x = Date, y = value,
-                                 colour = scenario,
-                                 group =sample)) +
-  geom_path(alpha = 0.5) +
-  facet_grid(variable~scenario, scales = "free_y") +
-  theme_linedraw() +
-  labs(x = "Date", y = "Total cases", title = paste0("Epidemic 3")) +
-  theme(axis.title = element_text(size = 12),
-        axis.text = element_text(size = 12)) +
-  geom_vline(xintercept = as.Date("2013-12-12"), alpha = 0.4)
-
-
-total_cases_time_temp2 <- total_cases_time_temp#[1:14000,]
-
-
-ggplot(total_cases_time_temp2,aes(x = Date, y = total_cases,
-                 colour = scenario,
-                 group =sample)) +
-  geom_path(alpha = 0.5) +
-  facet_grid(Virus~.) +
-  theme_linedraw() +
-  labs(x = "Date", y = "Total cases", title = "Replicate of UK in this model") +
-  theme(axis.title = element_text(size = 12),
-        axis.text = element_text(size = 12))
+# 
+# ghm<- total_cases_time_temp[]
+# 
+# total_cases_time_temp <- data.frame(total_cases_time_temp)
+# ghm$sample <- as.factor(ghm$sample)
+# ghm$scenario <- as.factor(ghm$scenario)
+# ghm$epidemic <- as.factor(ghm$epidemic)
+# ghm <- as.data.table(ghm)
+#  ghml <- ghm[epidemic ==25]
+#  ghml <- ghm[epidemic ==38]
+# ghm_m <- melt.data.table(ghml, id.vars = c("sample",  "epidemic", "scenario", "Date",
+#                                "Virus"), measure.vars = c("V1", "V2", "V3", "V4", "V5",
+#                                                           "V6", "V7"))
+#   #ghm_m <- ghm_m[sample %in% set_of_sampels]
+# ggplot(ghm_m,aes(x = Date, y = value,
+#                                  colour = scenario,
+#                                  group =sample)) +
+#   geom_path(alpha = 0.5) +
+#   facet_grid(variable~scenario, scales = "free_y") +
+#   theme_linedraw() +
+#   labs(x = "Date", y = "Total cases", title = paste0("Epidemic 3")) +
+#   theme(axis.title = element_text(size = 12),
+#         axis.text = element_text(size = 12)) +
+#   geom_vline(xintercept = as.Date("2013-12-12"), alpha = 0.4)
+# 
+# 
+# total_cases_time_temp2 <- total_cases_time_temp#[1:14000,]
+# 
+# 
+# ggplot(total_cases_time_temp2,aes(x = Date, y = total_cases,
+#                  colour = scenario,
+#                  group =sample)) +
+#   geom_path(alpha = 0.5) +
+#   facet_grid(Virus~.) +
+#   theme_linedraw() +
+#   labs(x = "Date", y = "Total cases", title = "Replicate of UK in this model") +
+#   theme(axis.title = element_text(size = 12),
+#         axis.text = element_text(size = 12))
 
   #storage_data[, total_cases := NULL]
 

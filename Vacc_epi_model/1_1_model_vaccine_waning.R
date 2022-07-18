@@ -276,7 +276,7 @@ vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incide
       else {
         age_group_limits <- eval(match.call()[["age_group_limits"]])
       }
-      
+
       contacts <- contact_matrix(as.matrix(polymod_data[contact_ids, 
       ]), demography, age_group_limits)
       
