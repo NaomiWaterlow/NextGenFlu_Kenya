@@ -7,5 +7,7 @@ To run the epidemiological model for Kenya, please run 0_Kenya_specifications.R 
 The output from running this analysis is overall_storage_default.Rdata and Vaccine_model_output_default.Rdata. These are then used as inputs in the economic analysis. 
 
 
+NOTE: Due to the size of the posterior files, only a subset of the posterior is included in this repository
+
 
 
