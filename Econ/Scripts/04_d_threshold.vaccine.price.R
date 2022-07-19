@@ -141,17 +141,6 @@ names(median.tp.undisc.dalys.short) <- c("Vaccine",
                                          "3x per capita GDP ($5738)")
 
 
-#plot median threshold prices
-# median.tp.undisc.dalys$tprice %>% 
-#   select(Scenario, Threshold, median.tp, margin.error) %>% 
-#   filter(!Scenario == "No vaccination") %>% 
-#   left_join(wtp.to.bind) %>% 
-#   ggplot(aes(wtp, median.tp, group = Scenario, col = Scenario))+
-#   geom_line() +
-#   geom_ribbon(aes(ymin = median.tp-margin.error, ymax = median.tp+margin.error,
-#                   fill = Scenario), alpha = 0.3)
-
-
 #write both prices to word----
 play.df <- df.wordtable.loop(list(median.tp.discounted$tprice.table,
                                   median.tp.discounted.short,

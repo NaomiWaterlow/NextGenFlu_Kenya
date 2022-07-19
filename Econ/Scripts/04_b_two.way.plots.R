@@ -7,58 +7,7 @@ library(here)
 
 #My plot codes ----
 
-#Cumulative distributions of costs----
-# all.samples %>% 
-#   filter(!Scenario == 1) %>% 
-#   #select(icer.total.per.daly.03, icer.direct.medical.per.daly.03) %>% 
-#   select(contains("icer"), Scenario, Year) %>% 
-#   pivot_longer(-c(Scenario,Year), #icer.total.per.daly.03:icer.direct.medical.per.daly.03,  
-#                values_to = "ICER_per_DALY_averted", 
-#                names_to = "Costs.name") %>% 
-#   mutate(Costs = case_when(
-#     str_detect(Costs.name, "direct") ~ "Direct medical costs",
-#     TRUE ~ "Total costs"
-#   ),
-#   DALY = str_extract(Costs.name, "\\d+")
-#   ) %>% #View()
-#   filter(!is.na(DALY)) %>% 
-#   filter(DALY == "00") %>% 
-#   ggplot(aes(ICER_per_DALY_averted, group=Costs, color=Costs))+ 
-#   stat_ecdf(aes(lty=Costs, color=Costs), size=1) +
-#   labs(y = "Cumulative distribution", x = " ") +
-#   #ggtitle(paste0(year)) +
-#   #geom_rect(aes(xmin=1710.5*3, xmax=Inf, ymin=0, ymax=1), fill = "#708090", alpha = 0.019) +
-#   # geom_rect(aes(xmin=1710.5, xmax=1710.5*3, ymin=0, ymax=1),fill ="#708090", alpha = 0.017) +
-#   # geom_rect(aes(xmin=0, xmax=1710.5, ymin=0, ymax=1), fill = "#708090", alpha = 0.013) +
-#   # geom_rect(aes(xmin=-Inf, xmax=0, ymin=0, ymax=1), fill = "#708090", alpha = 0.009) + 
-#   scale_color_manual(values = c("#b35806", "#542788")) +
-#   facet_grid(Scenario~Year, scales = "free")+
-#   #geom_vline(aes(xintercept=0),linetype="dashed")+
-#   #geom_vline(aes(xintercept=1710.5),linetype="dashed")+
-#   #geom_vline(aes(xintercept=1710.5*3),linetype="dashed")+
-#   theme(panel.background = element_blank()
-#         , legend.key = element_blank()
-#         , legend.position = "bottom"
-#         , plot.title = element_text(family = "sans", color="#666666", face=, size=8, hjust=0)
-#         , axis.title.y = element_text(family = "sans", color="#666666", size=8)
-#         , axis.title.x = element_text(family = "sans", color="#666666", size=8))
-
 #Total incremental costs by cases averted----
-
-# ay.outcomes.costs %>% 
-#   select(ay_Scenario3, ay_Sample,
-#          ay_disc.incremental.total.costs,
-#          ay_cases.averted, ay_Vaccine.doses) %>% 
-#   group_by(ay_Scenario3) %>% 
-#   dplyr::summarise(median.costs = median(ay_disc.incremental.total.costs)/1e6,
-#                    sd.costs = sd(ay_disc.incremental.total.costs)/1e6,
-#                    median.cases = median(ay_cases.averted)/1e6,
-#                    sd.cases = sd(ay_cases.averted)/1e6,
-#                    median.vacc = median(ay_Vaccine.doses)/1e6,
-#                    sd.vacc = sd(ay_Vaccine.doses)/1e6) %>% 
-#   filter(!ay_Scenario3 == "No vaccination") %>% 
-#   mutate(across(where(is.numeric), round, 2)) -> medians.to.plot
-
 
 ay.outcomes.costs %>% 
   select(ay_Scenario3, ay_Sample,

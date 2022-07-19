@@ -37,24 +37,6 @@ medians <- ay.outcomes.costs %>%
   filter(!str_detect(Measure, paste(c("costs", "doses", "10", "13"), collapse = "|")))
 
 
-# medians <- all.samples %>% 
-#   select(Scenario2, Sample, contains("all.ages")) %>% 
-#   pivot_longer(-c(Scenario2,Sample), names_to = "Measure", values_to = "value") %>% #View()
-#   group_by(Scenario2, Sample, Measure) %>% 
-#   dplyr::summarise(total = sum(value)) %>% 
-#   ungroup() %>%
-#   group_by(Scenario2, Measure) %>% #dplyr::summarise(median.total = median(total))
-#   dplyr::summarise(median = round(median(total, na.rm = TRUE)),
-#                    #median = median(value, na.rm = TRUE),
-#                    lower_ci = round(quantile(total, 0.025, na.rm = TRUE)),
-#                    upper_ci = round(quantile(total, 0.975, na.rm = TRUE))
-#   ) %>% 
-#   ungroup() %>% 
-#   mutate(median_ci = paste0(median, " (", lower_ci, ", ", upper_ci, ")")) %>% 
-#   select(Scenario2, Measure, median_ci) %>% 
-#   pivot_wider(names_from = Scenario2, values_from = median_ci) %>% 
-#   filter(!str_detect(Measure, paste(c("costs", "10", "13"), collapse = "|")))
-
 row.order <- paste0("ay_", c("cases.all.ages", 
                              "upper.resp.cases.all.ages", "URT.OPC.visit.all.ages",
                              "lower.resp.cases.all.ages", "LRT.non.hosp.all.ages", 
@@ -157,31 +139,6 @@ ay.outcomes.costs %>%
   pivot_wider(names_from = ay_Scenario3, values_from = median_ci) -> all.costs.summ
 
 
-
-# all.samples %>% 
-#   mutate(r = 0.03,
-#          n = Year - base.year,
-#          disc.total.costs = total.costs/((1+r)^n)) %>% 
-#   select(Scenario2, Sample,
-#          direct.medical.costs, direct.medical.costs.minus.vaccine,
-#          healthcare.related.costs, indirect.costs,
-#          total.costs, disc.total.costs
-#   ) %>%
-#   pivot_longer(-c(Scenario2, Sample),names_to = "Measure", values_to = "value") %>% #View()
-#   group_by(Scenario2, Sample, Measure) %>% 
-#   dplyr::summarise(total = sum(value)) %>% 
-#   ungroup() %>% #View()
-#   group_by(Scenario2, Measure) %>% 
-#   dplyr::summarise(median = round(median(total, na.rm = TRUE)/1e6, 2),
-#                    #median = median(value, na.rm = TRUE),
-#                    lower_ci = round(quantile(total, 0.025, na.rm = TRUE)/1e6, 2),
-#                    upper_ci = round(quantile(total, 0.975, na.rm = TRUE)/1e6, 2)
-#   ) %>% 
-#   ungroup() %>% 
-#   mutate(median_ci = paste0(median, " (", lower_ci, ", ", upper_ci, ")")) %>% 
-#   select(Scenario2, Measure, median_ci) %>% 
-#   pivot_wider(names_from = Scenario2, values_from = median_ci) -> all.costs.summ2
-
 row.order <- c(paste0("ay_", c("Vaccine.doses", "vaccine.admin.costs.all.ages", "vaccine.doses.price.all.ages",
                                "vaccine.costs.all.ages",
                                "direct.medical.costs", "direct.medical.costs.minus.vaccine.costs",
@@ -236,28 +193,6 @@ ay.outcomes.costs %>%
   mutate(median_ci = paste0(median, " (", lower_ci, ", ", upper_ci, ")")) %>% 
   select(ay_Scenario3, Measure, median_ci) %>% #View()
   pivot_wider(names_from = ay_Scenario3, values_from = median_ci) -> all.icers.summ
-
-# all.samples %>% 
-#   #group_by(Scenario) %>% 
-#   select(Scenario2, Sample,
-#          incremental.total.costs, disc.incremental.total.costs,
-#          dalys.00.averted, dalys.03.averted,
-#          icer.total.per.daly.00, icer.total.per.daly.03,
-#          icer.disc.total.per.daly.00, icer.disc.total.per.daly.03) %>%
-#   pivot_longer(-c(Scenario2, Sample), names_to = "Measure", values_to = "value") %>% #View()
-#   group_by(Scenario2, Sample, Measure) %>% 
-#   dplyr::summarise(total = sum(value)) %>% 
-#   ungroup() %>% #View()
-#   group_by(Scenario2, Measure) %>%  
-#   dplyr::summarise(median = round(median(total, na.rm = TRUE)),
-#                    #median = median(value, na.rm = TRUE),
-#                    lower_ci = round(quantile(total, 0.025, na.rm = TRUE)),
-#                    upper_ci = round(quantile(total, 0.975, na.rm = TRUE))) %>% 
-#   ungroup() %>% 
-#   mutate(median_ci = paste0(median, " (", lower_ci, ", ", upper_ci, ")")) %>% 
-#   select(Scenario2, Measure, median_ci) %>% 
-#   pivot_wider(names_from = Scenario2, values_from = median_ci) %>% 
-#   select(-NO_V) -> all.summ
 
 
 row.order <- c("ay_incremental.total.costs", "ay_disc.incremental.total.costs", 

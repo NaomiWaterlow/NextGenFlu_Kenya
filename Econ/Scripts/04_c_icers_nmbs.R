@@ -6,68 +6,6 @@ library(here)
 #source(here::here("Econ/Scripts", "00_1_read.all.samples.R"))
 source(here::here("Econ/Scripts", "mydf_functions.R"))
 
-#Fig. 1a----
-#Boxplot of icer values - all four types
-
-# ay.outcomes.costs %>% 
-#   select(ay_Scenario3, ay_Sample,
-#          #ay_incremental.total.costs, ay_disc.incremental.total.costs,
-#          #ay_dalys.00.averted, ay_dalys.03.averted,
-#          icer.total.per.daly.00, icer.total.per.disc.daly.03, 
-#          icer.disc.total.per.daly.03,
-#          icer.disc.total.per.disc.daly.03) %>% 
-#   pivot_longer(-c(ay_Scenario3, ay_Sample), names_to = "Measure", values_to = "value") %>% #View()
-#   filter(!ay_Scenario3 == "No vaccination" & str_detect(Measure, "icer")) %>% #View()
-#   mutate(Measure2 = case_when(
-#     Measure == "icer.total.per.daly.00" ~ "Undiscounted costs or DALYs (undiscounted LE)",
-#     Measure == "icer.total.per.disc.daly.03" ~ "Undiscounted costs, discounted DALYs (discounted LE)",
-#     Measure == "icer.disc.total.per.disc.daly.03" ~ "Discounted costs and DALYs (discounted LE)",
-#     TRUE ~ "Discounted costs, undiscounted DALYs (discounted LE)"
-#   )) %>% #select(Measure, Measure2) %>% unique()
-#   ggplot(aes(x = Measure2, y = value, fill = ay_Scenario3))+
-#   geom_boxplot()+
-#   theme_bw()+
-#   theme(#axis.line = element_line(colour = "black"),
-#     #panel.grid.major = element_blank(),
-#     #panel.grid.minor = element_blank(),
-#     axis.title = element_text(size = 12), 
-#     axis.text = element_text(size = 12), 
-#     strip.text = element_text(size = 12),
-#     legend.title = element_text(size = 12),
-#     legend.text = element_text(size = 10),
-#     legend.position = "bottom",
-#     panel.border = element_blank(),
-#     panel.background = element_blank(),
-#     axis.text.y = element_text(size=8))+
-#   xlab("") + ylab("Incremental total costs")+ labs(fill = "")+
-#   #coord_cartesian(ylim = c(-1000, 5800)) +
-#   # scale_y_continuous(breaks=c(0, 100, 491, 975, 1913, 5738, 10000, 
-#   #                             20000))+
-#   scale_fill_manual(values = c(#"#d73027",
-#     #"#fc8d59", 
-#     "orange1", 
-#     "#91cf60", 
-#     #"#1a9850"
-#     "#92c5de",
-#     #"#4393c3"
-#     "#3288bd",
-#     "purple"
-#   ))+
-#   guides(fill = guide_legend(nrow = 2))+
-#   xlab("") + ylab("ICER per DALY averted")+ labs(fill = "Vaccine")+
-#   coord_cartesian(ylim = c(-1000, 5800)) +
-#   scale_y_continuous(breaks=c(0, 100, 623, 1913, 5738))+
-#   geom_hline(yintercept = c(0, 100, 623, 1913, 5738), 
-#              lty = c("solid", "dotted", "dashed", "dotdash", "twodash"))+
-#   geom_vline(xintercept=0, lty = "solid")
-#   #guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
-#   #ggtitle("ICER per DALY averted - discounted and \nundiscounted DALYs, discounted costs")
-# 
-# ggsave(here::here(paste0("Econ/Model_outcomes_output", "/Final/", filename, "/", create.date),
-#                   "all_icers_boxplot.jpeg"),
-#        height = 2200, width = 3000, units = "px", limitsize = FALSE)
-# 
-
 #Fig. 1b----
 #Boxplot of incremental costs - both types
 
