@@ -729,15 +729,15 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
     efficacy_now_spot <-required_efficacy[required_efficacy2]
   }
  
-  if(virus_type =="AH1N1"){
+  if(flu_type =="AH1N1"){
     efficacy_now <- vaccine_scenarios[[scenario]][["efficacy_H1"]][,efficacy_now_spot]
     efficacy_next <- vaccine_scenarios[[scenario]][["efficacy_H1"]][,efficacy_now_spot+1]
     efficacy_next2 <- vaccine_scenarios[[scenario]][["efficacy_H1"]][,efficacy_now_spot+2]
-  } else if(virus_type =="AH3N2"){
+  } else if(flu_type =="AH3N2"){
     efficacy_now <- vaccine_scenarios[[scenario]][["efficacy_H3"]][,efficacy_now_spot]
     efficacy_next <- vaccine_scenarios[[scenario]][["efficacy_H3"]][,efficacy_now_spot+1]
     efficacy_next2 <- vaccine_scenarios[[scenario]][["efficacy_H3"]][,efficacy_now_spot+2]
-  } else if(virus_type =="B"){
+  } else if(flu_type =="B"){
     efficacy_now <- vaccine_scenarios[[scenario]][["efficacy_B"]][,efficacy_now_spot]
     efficacy_next <- vaccine_scenarios[[scenario]][["efficacy_B"]][,efficacy_now_spot+1]
     efficacy_next2 <- vaccine_scenarios[[scenario]][["efficacy_B"]][,efficacy_now_spot+2]
