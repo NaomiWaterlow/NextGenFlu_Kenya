@@ -116,7 +116,7 @@ epidemic_scenarios_yearcross <- function (vaccine_calendar, parameters, contact_
       #print("it is here")
       sample_counter <<- 0
       return(apply(pc, 1,function(pars_contacts) epidemic_scenarios_yearcross(parameters = pars_contacts[1:ncol(parameters)], 
-                                                                                 contact_ids = contact_ids ,
+                                                                                 contact_ids = pars_contacts[ncol(parameters):ncol(pc)] ,
                                                                                  vaccine_calendar = vaccine_calendar, 
                                                                                  incidence_function = incidence_function, time_column = time_column, 
                                                                                  ...)))
@@ -186,7 +186,7 @@ infectionODEs_epidemic_yearcross <- function(population, initial_infected, vacci
     end_date <- as.Date(paste0(year_to_run, "-09-01"))
     start_h <- "SH"
   } else {
-    end_date <- as.Date(paste0(as.character(year_to_run), "-03-01"))
+    end_date <- as.Date(paste0(as.character(year_to_run+1), "-03-01"))
     start_h <- "NH"
   }
   
@@ -251,10 +251,13 @@ infectionODEs_epidemic_yearcross <- function(population, initial_infected, vacci
   # Change the dates and efficacy to the other hemisphere, and specify whether the time
   # frame extends beyond into the nexxt hemisphere
   if(start_h == "NH"){
-    begin_date <- as.Date(paste0(year_to_run, "-03-01"))
-    if(end_date2>as.Date(paste0(year_to_run, "-09-01"))){
+    if(month(begin_date)<9){
+      begin_date <- as.Date(paste0(year(begin_date), "-03-01"))
+    } else{
+    begin_date <- as.Date(paste0(year(begin_date)+1, "-03-01"))}
+    if(end_date2>as.Date(paste0(year(begin_date), "-09-01"))){
       double_trouble <- T 
-      t <- as.numeric(seq(begin_date, as.Date(paste0(year_to_run, "-09-01")), interval))
+      t <- as.numeric(seq(begin_date, as.Date(paste0(year(begin_date), "-09-01")), interval))
       }else{
         double_trouble <- F
         t <- as.numeric(seq(begin_date, end_date2, interval))
@@ -585,7 +588,7 @@ infectionODEs_epidemic_yearcross <- function(population, initial_infected, vacci
       
       # update the vaccination calendar etc.
       efficacy_now <- efficacy_next2
-      begin_date <- as.Date(paste0(year_to_run, "-09-01"))
+      begin_date <- as.Date(paste0(year(begin_date), "-09-01"))
       t <- as.numeric(seq(begin_date, end_date2, interval))
       #Update the vaccination to NH
       keepers <- which(vaccine_calendar$dates>= begin_date &vaccine_calendar$dates < tail(t,1))
