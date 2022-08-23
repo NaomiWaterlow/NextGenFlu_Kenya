@@ -774,7 +774,7 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
   # Run the model and calculate the cumulative infections
   # outputs total infections in age group over the time period, for each posterior sample
 
-  total_infections_ages <- epidemic_scenarios_yearcross(demography = demography_input,
+  total_infections_ages <- epidemic_scenarios_yearcross(demography = population_input,
                                                         vaccine_calendar = calender,
                                                         polymod_data = as.matrix(relevant_polymod),
                                                         contact_ids = contact_ids,
