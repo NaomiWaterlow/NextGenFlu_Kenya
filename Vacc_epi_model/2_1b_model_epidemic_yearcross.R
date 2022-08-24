@@ -1,7 +1,14 @@
 # function to set up infection model - adapted from Js cocd
-epidemic_scenarios_yearcross <- function (vaccine_calendar, parameters, contact_ids, incidence_function, 
-                                          time_column,
+epidemic_scenarios_yearcross <- function (demography_input, 
+                                          vaccine_calendar,
+                                          relevant_polymod,
+                                          contact_ids_input,
+                                          parameters,
+                                          age_group_limits_input, 
+                                          risk_ratios_input,
                                           waning_rate,
+                                          incidence_function, 
+                                          time_column,
                                           vaccination_ratio_input,
                                           begin_date, 
                                           end_date,
@@ -11,40 +18,42 @@ epidemic_scenarios_yearcross <- function (vaccine_calendar, parameters, contact_
                                           previous_summary,
                                           ..., verbose = T) 
 {
+
   if (missing(incidence_function)) {
     var_names <- names(sys.call())
     #print(paste("This is var_names", var_names, " "))
-    if (!"polymod_data" %in% var_names) {
+    if (!"relevant_polymod" %in% var_names) {
       stop("No polymod_data set provided")
     }
     else {
-      polymod_data <- eval(match.call()[["polymod_data"]])
+      polymod_data <- relevant_polymod
+
     }
-    if (missing(contact_ids)) {
+    if (missing(contact_ids_input)) {
       stop("No contact_ids set provided")
     }
-    if (!"demography" %in% var_names) {
+    if (!"demography_input" %in% var_names) {
       stop("No demography provided, i.e. a vector with population size by age (starting at age is zero)")
     }
     else {
-      demography <- eval(match.call()[["demography"]])
+      demography <- demography_input
     }
     time_column = "Time"
     incidence_function <- function(vaccine_calendar, parameters, 
-                                   contact_ids,vaccination_ratio_output, ...) {
-      if (!"age_group_limits" %in% var_names) {
+                                   contact_ids_input,vaccination_ratio_output, ...) {
+      if (!"age_group_limits_input" %in% var_names) {
         if (verbose) 
           warning("Missing age_group_limits, using default: c(1,5,15,25,45,65)")
-        age_group_limits <- c(1, 5, 15, 25, 45, 65)
+        age_group_limit <- c(1, 5, 15, 25, 45, 65)
       }
       else {
-        age_group_limits <- eval(match.call()[["age_group_limits"]])
+        age_group_limits <- age_group_limits_input
       }
 
-      contacts <- contact_matrix(as.matrix(polymod_data[contact_ids, 
+      contacts <- contact_matrix(as.matrix(polymod_data[contact_ids_input, 
       ]), demography, age_group_limits)
       age.groups <- stratify_by_age(demography, age_group_limits)
-      if (!"risk_ratios" %in% var_names) {
+      if (!"risk_ratios_input" %in% var_names) {
         if (verbose) 
           warning("Missing risk_ratios, using default UK based values")
         risk_ratios <- matrix(c(0.021, 0.055, 0.098, 
@@ -52,7 +61,7 @@ epidemic_scenarios_yearcross <- function (vaccine_calendar, parameters, contact_
                                 0), ncol = 7, byrow = T)
       }
       else {
-        risk_ratios <- eval(match.call()[["risk_ratios"]])
+        risk_ratios <- risk_ratios_input
       }
       verbose <<- F
   
@@ -86,13 +95,12 @@ epidemic_scenarios_yearcross <- function (vaccine_calendar, parameters, contact_
   }
   if (is.null(nrow(parameters))) {
     
-    if (missing(contact_ids)) {
+    if (missing(contact_ids_input)) {
       
       result <- incidence_function(vaccine_calendar, parameters, 
                                    ...)
     }
     else {
-      
       result <- incidence_function(vaccine_calendar, parameters, 
                                    contact_ids, ...)
       
@@ -103,8 +111,8 @@ epidemic_scenarios_yearcross <- function (vaccine_calendar, parameters, contact_
   else {
     if (missing(time_column)) 
       time_column <- NULL
-    if (missing(contact_ids)) {
-      
+    if (missing(contact_ids_input)) {
+      browser()
       return(t(apply(parameters, 1, function(pars) epidemic_scenarios_yearcross(parameters = pars, 
                                                                                  vaccine_calendar = vaccine_calendar,
                                                                                  incidence_function = incidence_function, 
@@ -710,7 +718,8 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
                   target_coverage)
   # specify the demography
   if(location == "Kenya"){
-  population_input <- popken[,which(years == epidemics_list[[epidemic]]["year"])+1]}
+  
+  demography_input <- popken[,which(years == epidemics_list[[epidemic]]["year"])+1]}
   # calculate the vaccination calender
   # determine the right efficacy to use here 
   starting_year <- year(begin_date)
@@ -777,13 +786,13 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
   # Run the model and calculate the cumulative infections
   # outputs total infections in age group over the time period, for each posterior sample
 
-  total_infections_ages <- epidemic_scenarios_yearcross(demography = population_input,
+  total_infections_ages <- epidemic_scenarios_yearcross(demography_input = demography_input,
                                                         vaccine_calendar = calender,
-                                                        polymod_data = as.matrix(relevant_polymod),
-                                                        contact_ids = contact_ids,
+                                                        relevant_polymod = as.matrix(relevant_polymod),
+                                                        contact_ids_input = contact_ids,
                                                         parameters = posterior_subset,
-                                                        age_group_limits = age_groups,
-                                                        risk_ratios = risk_ratios_input,
+                                                        age_group_limits_input = age_groups,
+                                                        risk_ratios_input = risk_ratios_input,
                                                         waning_rate = waning_rate, 
                                                         vaccination_ratio_input = prop_vacc_start, 
                                                         begin_date = begin_date, 
