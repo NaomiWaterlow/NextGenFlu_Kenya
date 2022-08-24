@@ -170,7 +170,7 @@ infectionODEs_epidemic_yearcross <- function(population, initial_infected, vacci
   }
 
   
-  if(change_susceptibiltiy_switch == "FIXED_REDUCTION" & 
+  if(change_susceptibility_switch == "FIXED_REDUCTION" & 
      reduce_susceptibility == T){
     susceptibility[1:2] = susceptibility[1:2]*1.2
   }

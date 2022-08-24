@@ -19,7 +19,7 @@ exact_efficacies <- F
 name_run <- "default"#"POP_ADD_WANING" #"year_round"#"default"#"coverage"EXACT_EFF
 use_presampled <- T
 save_samples <- F
-change_susceptibiltiy_switch <- "OFF" # Can be OFF or POP_ADD_WANING or FIXED_REDUCTION
+change_susceptibility_switch <- "OFF" # Can be OFF or POP_ADD_WANING or FIXED_REDUCTION
 save_susceptibility <- T
 end_first_year_vaccination <- "2011-03-01"
 ####### KENYA CONSTANTS ######
