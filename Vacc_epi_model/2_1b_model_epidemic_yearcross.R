@@ -142,7 +142,7 @@ infectionODEs_epidemic_yearcross <- function(population, initial_infected, vacci
                                              previous_summary, ...
 ) {
 
-  if(change_susceptibiltiy_switch == "POP_ADD_WANING"){
+  if(change_susceptibility_switch == "POP_ADD_WANING"){
   
   sample_counter <<- sample_counter+1
    # check that a previous epdiemic existed, else 0
