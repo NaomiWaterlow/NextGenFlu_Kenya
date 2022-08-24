@@ -70,15 +70,15 @@ for(scenario in target_scenarios){
                                           FUN="*")
          }
          
-         
+    
          # Model the number of cases for each age group on each run of the ODE function
-         vaccination_ratio_output = vacc_scenario_ken(demography = demography_input,
+         vaccination_ratio_output = vacc_scenario_ken(demography_input = demography_input,
                                                       vaccine_calendar = calender,
-                                                      polymod_data = as.matrix(relevant_polymod),
-                                                      contact_ids = contact_ids,
+                                                      relevant_polymod = as.matrix(relevant_polymod),
+                                                      contact_ids_input = contact_ids,
                                                       parameters = rep(0,9),
-                                                      age_group_limits = age_groups,
-                                                      risk_ratios = risk_ratios_input,
+                                                      age_group_limits_input = age_groups,
+                                                      risk_ratios_input = risk_ratios_input,
                                                       waning_rate = waning_rate, 
                                                       vaccination_ratio_input = prop_vacc_start, 
                                                       year_to_run = year_to_run,

@@ -241,47 +241,55 @@ infectionODEs <- function(population, initial_infected, vaccine_calendar, contac
 # This function defines the incidence function. 
 # Loops round and checks again, if there wasn't an incidence function first time
 
-vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incidence_function, 
-                               time_column,
+vacc_scenario_ken <- function (demography_input, 
+                               vaccine_calendar,
+                               relevant_polymod,
+                               contact_ids_input,
+                               parameters,
+                               age_group_limits_input, 
+                               risk_ratios_input,
                                waning_rate,
+                               incidence_function, 
+                               time_column,
                                vaccination_ratio_input,year_to_run,efficacy_NH,
                                ..., verbose = T) 
 {
+
   if (missing(incidence_function)) {
     var_names <- names(sys.call())
     #print(paste("This is var_names", var_names, " "))
-    if (!"polymod_data" %in% var_names) {
+    if (!"relevant_polymod" %in% var_names) {
       stop("No polymod_data set provided")
     }
     else {
-      polymod_data <- eval(match.call()[["polymod_data"]])
+      polymod_data <- relevant_polymod
+      
     }
-    if (missing(contact_ids)) {
+    if (missing(contact_ids_input)) {
       stop("No contact_ids set provided")
     }
-    if (!"demography" %in% var_names) {
+    if (!"demography_input" %in% var_names) {
       stop("No demography provided, i.e. a vector with population size by age (starting at age is zero)")
     }
     else {
-      demography <- eval(match.call()[["demography"]])
+      demography <- demography_input
     }
     time_column = "Time"
     incidence_function <- function(vaccine_calendar, parameters, 
-                                   contact_ids,vaccination_ratio_output, ...) {
-      if (!"age_group_limits" %in% var_names) {
+                                   contact_ids_input,vaccination_ratio_output, ...) {
+      if (!"age_group_limits_input" %in% var_names) {
         if (verbose) 
           warning("Missing age_group_limits, using default: c(1,5,15,25,45,65)")
-        age_group_limits <- c(1, 5, 15, 25, 45, 65)
+        age_group_limit <- c(1, 5, 15, 25, 45, 65)
       }
       else {
-        age_group_limits <- eval(match.call()[["age_group_limits"]])
+        age_group_limits <- age_group_limits_input
       }
 
-      contacts <- contact_matrix(as.matrix(polymod_data[contact_ids, 
+      contacts <- contact_matrix(as.matrix(polymod_data[contact_ids_input, 
       ]), demography, age_group_limits)
-      
       age.groups <- stratify_by_age(demography, age_group_limits)
-      if (!"risk_ratios" %in% var_names) {
+      if (!"risk_ratios_input" %in% var_names) {
         if (verbose) 
           warning("Missing risk_ratios, using default UK based values")
         risk_ratios <- matrix(c(0.021, 0.055, 0.098, 
@@ -289,7 +297,7 @@ vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incide
                                 0), ncol = 7, byrow = T)
       }
       else {
-        risk_ratios <- eval(match.call()[["risk_ratios"]])
+        risk_ratios <- risk_ratios_input
       }
       verbose <<- F
       popv <- stratify_by_risk(age.groups, risk_ratios)
@@ -323,7 +331,7 @@ vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incide
   }
   if (is.null(nrow(parameters))) {
     
-    if (missing(contact_ids)) {
+    if (missing(contact_ids_input)) {
       
       result <- incidence_function(vaccine_calendar, parameters, 
                                    ...)
@@ -331,7 +339,7 @@ vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incide
     else {
       
       result <- incidence_function(vaccine_calendar, parameters, 
-                                   contact_ids, ...)
+                                   contact_ids_input, ...)
       
     }
     # if (!missing(time_column) && !is.null(time_column)) 
@@ -342,7 +350,7 @@ vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incide
   else {
     if (missing(time_column)) 
       time_column <- NULL
-    if (missing(contact_ids)) {
+    if (missing(contact_id_input)) {
       
       return(lapply(parameters, function(pars) vaccination_scenario(parameters = pars, 
                                                                     vaccine_calendar = vaccine_calendar,
@@ -350,6 +358,7 @@ vacc_scenario_ken <- function (vaccine_calendar, parameters, contact_ids, incide
                                                                     time_column = time_column, ...)))
     }
     else {
+ 
       pc <- cbind(parameters, contact_ids)
       #print("it is here")
       return(lapply(pc, function(pars_contacts) vaccination_scenario(parameters = pars_contacts[1:ncol(parameters)], 
