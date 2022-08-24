@@ -24,7 +24,8 @@ save_susceptibility <- T
 end_first_year_vaccination <- "2011-03-01"
 ####### KENYA CONSTANTS ######
 
-age_groups <- c(1, 6, 15, 20, 50)
+# these are defined globally but called within various functions
+age_groups_model <- c(1, 6, 15, 20, 50)
 max_age <- 70
 num_age_groups <- 6
 risk_ratios_input <- matrix(c(0, 0, 0, 0, 0, 0, 
@@ -36,7 +37,7 @@ calculate_FOI <- "Yes" # this should always be Yes for Kenya
 num_years <- 8
 years <- c(2010:2019)
 # using one fixed value for the contact matrices on vaccination - it doesn't matter as theres no infection
-contact_ids <- as.matrix(read.csv(here::here("Posteriors","2010-03-12 to 2010-12-17 AH3N2 UK_presampled_suscchange.csv"))[1,13:579])
+contact_ids_input <- as.matrix(read.csv(here::here("Posteriors","2010-03-12 to 2010-12-17 AH3N2 UK_presampled_suscchange.csv"))[1,13:579])
 high_risk <- rep(0,6)
 risk_group_labels <- data.frame(id =c(1:18), 
                                 label =c(rep("Risk_group1",num_age_groups),

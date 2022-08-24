@@ -4,7 +4,7 @@
 ################################# SETUP ########################################
 # storage frames
 #TODO check that this works - changed for multi country
-population2 <- data.frame(matrix(ncol = length(age_groups)+4))
+population2 <- data.frame(matrix(ncol = length(age_groups_model)+4))
 
 # for each vaccine scenario
 for(scenario in target_scenarios){
@@ -25,7 +25,7 @@ for(scenario in target_scenarios){
       
       for(i in 1:(num_years+1)){
          #proportion vaccinated by age group from the previous year
-         if(i ==1 ){prop_vacc_start <- c(rep(0,num_age_groups*3))} else {
+         if(i ==1 ){prop_vacc_start <- c(rep(0,num_age_groups*(3)))} else {
             prop_vacc_start <- unlist(tail(vaccination_ratio_output,1))
          }
          
@@ -53,32 +53,26 @@ for(scenario in target_scenarios){
                                                ncol = num_age_groups*2),
                                         target_coverage)
          # Udpate the vaccination calendar with the new inputs
-         
-         calender = as_vaccination_calendar(efficacy = c(efficacy[,(i*2)-1]),
+         calendar_input = as_vaccination_calendar(efficacy = c(efficacy[,(i*2)-1]),
                                             dates = as.Date(dates),
                                             coverage = as.data.frame(new_coverage),
                                             no_age_groups = num_age_groups,
-                                            no_risk_groups = 2)
+                                            no_risk_groups = no_risk_groups+1)
          year_to_run <- year(dates[1])
          
          # work out vaccination adjustments based on what proportion of 0-5s vaccinated
          # first year vaccinate everyone
          if(year_to_run != years[[1]]){
             # work out the coverage in the 1-5 age group based on which ages vaccinated
-            calender$calendar[,] <- sweep(calender$calendar[,], 2,
+            calendar_input$calendar[,] <- sweep(calendar_input$calendar[,], 2,
                                           rep(unlist(vaccine_scenarios[[scenario]]["prop_group_vacc"]),3),
                                           FUN="*")
          }
          
     
          # Model the number of cases for each age group on each run of the ODE function
-         vaccination_ratio_output = vacc_scenario_ken(demography_input = demography_input,
-                                                      vaccine_calendar = calender,
-                                                      relevant_polymod = as.matrix(relevant_polymod),
-                                                      contact_ids_input = contact_ids,
-                                                      parameters = rep(0,9),
-                                                      age_group_limits_input = age_groups,
-                                                      risk_ratios_input = risk_ratios_input,
+         vaccination_ratio_output = vacc_model_1(demography_input = demography_input,
+                                                      calendar_input = calendar_input,
                                                       waning_rate = waning_rate, 
                                                       vaccination_ratio_input = prop_vacc_start, 
                                                       year_to_run = year_to_run,
@@ -113,12 +107,11 @@ for(scenario in target_scenarios){
             if(virus_type == "AH1N1"){
                total_vaccines <- rbind(total_vaccines, total_vaccinated)}
          }
-         
-         population[i,] <- c(stratify_by_age(demography_input,age_groups), years[i], scenario, virus_type)
-         
+       
+         population2[i,] <- c(stratify_by_age(demography_input, age_groups_model), years[i], scenario, virus_type)
       }
       
-      population2 <- na.omit(rbind(population2, population))
+      population2 <- na.omit(population2)
       vaccination_ratio_store <- data.table(vaccination_ratio_store)
       vaccination_ratio_store[,week_all := date2ISOweek(as.Date(Date ,origin = "1970-01-01"))]
       vaccination_ratio_store[,week :=  substring(week_all,1, nchar(week_all)-2)]
@@ -147,7 +140,8 @@ for(scenario in target_scenarios){
 }
 
 vaccination_ratio_store2 <- data.table(vaccination_ratio_store2)
-vaccination_ratio_store3 <-melt.data.table(vaccination_ratio_store2, id.vars = c("Date", "Vacc_scenario", "virus_type", "week_all", 
+vaccination_ratio_store3 <-melt.data.table(vaccination_ratio_store2,
+                                           id.vars = c("Date", "Vacc_scenario", "virus_type", "week_all", 
                                                                                  "week"))
 
 

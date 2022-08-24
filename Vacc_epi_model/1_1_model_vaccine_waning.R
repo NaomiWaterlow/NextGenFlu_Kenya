@@ -2,7 +2,7 @@ gen_seeiir_ag_vacc_waning <- odin::odin({
   # Number of groups
   no_groups <- user()
   # INITIAL CONDITIONS
-  # Population size by age/risk group
+  # population_stratified size by age/risk group
   pop[] <- user()
   # Start vaccinated by age/risk group
   V0[] <- user()
@@ -65,7 +65,7 @@ gen_seeiir_ag_vacc_waning_NH <- odin::odin({
   no_groups <- user()
   
   # INITIAL CONDITIONS
-  # Population size by age/risk group
+  # population_stratified size by age/risk group
   pop[] <- user()
   # Initial proportion in each compartment
   allS[] <- user()
@@ -124,11 +124,10 @@ gen_seeiir_ag_vacc_waning_NH <- odin::odin({
   dim(VT) <- no_groups
 })
 
-
-infectionODEs <- function(population, initial_infected, vaccine_calendar, contact_matrix,
+infectionODEs <- function(population_stratified, initial_infected, calendar_input, contacts_matrixformat,
                           susceptibility, transmissibility, infection_delays, interval 
                           ,waning_rate, initial_vaccinated_prop, initial_Rv_prop,
-                          year_to_run, efficacy_NH, ...
+                          year_to_run, efficacy_NH
 ) {
   
   # Extract the date used from the vaccine calendar
@@ -136,31 +135,29 @@ infectionODEs <- function(population, initial_infected, vaccine_calendar, contac
   end_date <- as.Date(paste0(year_to_run, "-09-01"))
   t <- as.numeric(seq(begin_date, end_date, interval))
   
-  no_groups <- length(population)
-  no_risk_groups <- no_groups/nrow(contact_matrix)
-  no_age_groups <- no_groups/no_risk_groups
+  no_groups <- length(population_stratified)
+  no_age_groups <- length(age_groups_model)
   
   
   # adds a new top row, with the start date od simulation and 0 vaccination
-  calendar <- vaccine_calendar$calendar[c(nrow(vaccine_calendar$calendar),1:nrow(vaccine_calendar$calendar)),]
-  dates <- as.numeric(c(t[1], vaccine_calendar$dates))
-  if(dates[1] == dates[2]){dates <- dates[-2]
-  calendar <- calendar[-2,]}
+  calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),1:nrow(calendar_input$calendar)),]
+  calendar_input$dates <- as.numeric(c(t[1], calendar_input$dates))
+  if(calendar_input$dates[1] == calendar_input$dates[2]){calendar_input$dates <- calendar_input$dates[-2]
+  calendar_input$calendar <- calendar_input$calendar[-2,]}
   # Run the model over the first 6 months
-  # age the vaccinated population by 1 year. 
-  
-  initial_vaccinated_prop <- age_population_1year(population, old_proportions=initial_vaccinated_prop)
-  initial_Rv_prop <- age_population_1year(population, old_proportions = initial_Rv_prop)
+  # age the vaccinated population_stratified by 1 year. 
+  initial_vaccinated_prop <- age_population_stratified_1year(population_stratified, old_proportions=initial_vaccinated_prop)
+  initial_Rv_prop <- age_population_stratified_1year(population_stratified, old_proportions = initial_Rv_prop)
   #Assume that all R become susceptible again at the end of the year.
-  initial_R_prop <- rep(0,num_age_groups*3)
-
+  initial_R_prop <- rep(0,no_groups)
+  
   mod <- gen_seeiir_ag_vacc_waning$new(no_groups = no_groups,
-                                       pop = population, V0 = initial_vaccinated_prop,
+                                       pop = population_stratified, V0 = initial_vaccinated_prop,
                                        RV0 = initial_Rv_prop,
-                                       alpha = vaccine_calendar$efficacy[1:no_groups],
+                                       alpha = calendar_input$efficacy[1:no_groups],
                                        omega = waning_rate,
-                                       dates = dates,
-                                       calendar = calendar[,1:no_groups],
+                                       dates = calendar_input$dates,
+                                       calendar = calendar_input$calendar[,1:no_groups],
                                        num_vac_start = rep(0,num_age_groups*3)
   )
   
@@ -173,35 +170,37 @@ infectionODEs <- function(population, initial_infected, vaccine_calendar, contac
   end_date <- as.Date(paste0(as.character(year_to_run+1), "-03-01"))
   t <- as.numeric(seq(begin_date, end_date, interval))
   #Update the vaccination to NH
-  keepers <- which(vaccine_calendar$dates>= begin_date )
-  vaccine_calendar$dates <- vaccine_calendar$dates[keepers] 
+  keepers <- which(calendar_input$dates>= begin_date )
+  calendar_input$dates <- calendar_input$dates[keepers] 
   
-  if(!is.na(vaccine_calendar$dates[1])){ temp <- vaccine_calendar$dates} else {temp <- tail(t,1)}
+  # choose either the last date in the vaccine calendar or the last time in the times
+  if(!is.na(calendar_input$dates[1])){temp <- calendar_input$dates} else {temp <- tail(t,1)}
+  #specify the inputs dates as the time to start and the last date
   input_dates <- c(t[1],temp)
+  # remove if it's the same dates
   if(input_dates[1] == input_dates[2]){input_dates <- input_dates[-1]}
-  vaccine_calendar$dates <- input_dates
-  vaccine_calendar$efficacy <- efficacy_NH
-  
+  # save back into the calendar
+  calendar_input$dates <- input_dates
+  calendar_input$efficacy <- efficacy_NH
+# alter the efficacy and calendar as appropiate
   if(length(input_dates)>2){
-    vaccine_calendar$calendar <- vaccine_calendar$calendar[c(keepers[1]-1,keepers),]
+    calendar_input$calendar <- calendar_input$calendar[c(keepers[1]-1,keepers),]
   } else{
-    vaccine_calendar$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
-    vaccine_calendar$efficacy <- rep(0,num_age_groups*3)
+    calendar_input$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
+    calendar_input$efficacy <- rep(0,num_age_groups*3)
   }
-  
-  # recreate the inputs
-  calendar <- vaccine_calendar$calendar
   # carry on the runi
+
   mod2 <- gen_seeiir_ag_vacc_waning_NH$new(no_groups = no_groups,
-                                           pop = population,
+                                           pop = population_stratified,
                                            allS = y_tail[2:((2+no_groups)-1)],
                                            allSv = y_tail[(2+no_groups):((2+(no_groups*2))-1)],
                                            allRv = y_tail[(2+(2*no_groups)):((2+(no_groups*3))-1)],
                                            num_vac_start = y_tail[(2+(3*no_groups)):((2+(no_groups*4))-1)],
-                                           alpha = vaccine_calendar$efficacy[1:no_groups],
+                                           alpha = calendar_input$efficacy[1:no_groups],
                                            omega = waning_rate,
-                                           dates = input_dates,
-                                           calendar = calendar[,1:no_groups]
+                                           dates =  calendar_input$dates,
+                                           calendar = calendar_input$calendar[,1:no_groups]
                                            #    ageing =ageing
   )
   
@@ -210,22 +209,23 @@ infectionODEs <- function(population, initial_infected, vaccine_calendar, contac
   y <- data.table(y)
   colnames(y) <- gsub(pattern = "\\[", replacement="", x =colnames(y))
   colnames(y) <- gsub(pattern = "\\]", replacement="", x =colnames(y))
+
   
   # caclulate the proportion vaccinated in each age group
-  for(agp in 1:(num_age_groups*no_risk_groups)){
+  for(agp in 1:(num_age_groups*3)){
     prop_v_label <- paste0("prop_v", agp)
     S_label <- paste0("S", agp)
-    y[, eval(prop_v_label) := (population[agp]-(get(S_label)))/population[agp]]
+    y[, eval(prop_v_label) := (population_stratified[agp]-(get(S_label)))/population_stratified[agp]]
   }
   # calculate the proportion in the Rv compartment in each age group
-  for(agp in 1:(num_age_groups*no_risk_groups)){
+  for(agp in 1:(num_age_groups*3)){
     prop_Rv_label <- paste0("prop_Rv", agp)
     Rv_label <- paste0("Rv", agp)
     Sv_label <- paste0("Sv", agp)
     y[, eval(prop_Rv_label) := get(Rv_label)/(get(Sv_label) + get(Rv_label))]
   }
   # calculate the total number vaccinated in each age group
-  for(agp in 1:(num_age_groups*no_risk_groups)){
+  for(agp in 1:(num_age_groups*3)){
     Vaccinated_label <- paste0("Vaccinated",agp)
     VT_label <- paste0("VT",agp)
     y[, eval(Vaccinated_label) := get(VT_label)]
@@ -238,143 +238,81 @@ infectionODEs <- function(population, initial_infected, vaccine_calendar, contac
 }
 
 
-# This function defines the incidence function. 
-# Loops round and checks again, if there wasn't an incidence function first time
-
-vacc_scenario_ken <- function (demography_input, 
-                               vaccine_calendar,
-                               relevant_polymod,
-                               contact_ids_input,
-                               parameters,
-                               age_group_limits_input, 
-                               risk_ratios_input,
+# Defining the incidence function
+#TODO put the relevant function inputs in
+incidence_function <- function(demography_input, 
+                               calendar_input,
+                               sampled_contact_ids,
+                               sampled_parameters,
                                waning_rate,
-                               incidence_function, 
-                               time_column,
-                               vaccination_ratio_input,year_to_run,efficacy_NH,
-                               ..., verbose = T) 
-{
+                               vaccination_ratio_input,
+                               year_to_run,efficacy_NH) {
+  
+  time_column = "Time"
+  # create the contact matrix
+  contacts_matrixformat <- contact_matrix(as.matrix(relevant_polymod),
+                             demography_input, age_groups_model)
 
-  if (missing(incidence_function)) {
-    var_names <- names(sys.call())
-    #print(paste("This is var_names", var_names, " "))
-    if (!"relevant_polymod" %in% var_names) {
-      stop("No polymod_data set provided")
-    }
-    else {
-      polymod_data <- relevant_polymod
-      
-    }
-    if (missing(contact_ids_input)) {
-      stop("No contact_ids set provided")
-    }
-    if (!"demography_input" %in% var_names) {
-      stop("No demography provided, i.e. a vector with population size by age (starting at age is zero)")
-    }
-    else {
-      demography <- demography_input
-    }
-    time_column = "Time"
-    incidence_function <- function(vaccine_calendar, parameters, 
-                                   contact_ids_input,vaccination_ratio_output, ...) {
-      if (!"age_group_limits_input" %in% var_names) {
-        if (verbose) 
-          warning("Missing age_group_limits, using default: c(1,5,15,25,45,65)")
-        age_group_limit <- c(1, 5, 15, 25, 45, 65)
-      }
-      else {
-        age_group_limits <- age_group_limits_input
-      }
+  age_group_sizes <- stratify_by_age(demography_input, age_groups_model)
+  population_stratified <- stratify_by_risk(age_group_sizes, risk_ratios_input)
 
-      contacts <- contact_matrix(as.matrix(polymod_data[contact_ids_input, 
-      ]), demography, age_group_limits)
-      age.groups <- stratify_by_age(demography, age_group_limits)
-      if (!"risk_ratios_input" %in% var_names) {
-        if (verbose) 
-          warning("Missing risk_ratios, using default UK based values")
-        risk_ratios <- matrix(c(0.021, 0.055, 0.098, 
-                                0.087, 0.092, 0.183, 0.45, 0, 0, 0, 0, 0, 0, 
-                                0), ncol = 7, byrow = T)
-      }
-      else {
-        risk_ratios <- risk_ratios_input
-      }
-      verbose <<- F
-      popv <- stratify_by_risk(age.groups, risk_ratios)
-      #  initial.infected <- rep(10^parameters[9], 6)
-      initial.infected <- rep(0, num_age_groups)
-      initial.infected <- stratify_by_risk(initial.infected, 
-                                           risk_ratios)
-      
-      
-      if(is.null(names(vaccination_ratio_input))){
-        pv_input <- vaccination_ratio_input
-        pRv_input <- vaccination_ratio_input
-      } else {
-        pv_input <- vaccination_ratio_input[grep(pattern = "prop_v", names(vaccination_ratio_input))]
-        pRv_input <-  vaccination_ratio_input[grep(pattern = "prop_Rv", names(vaccination_ratio_input))]
-      }
-      
-      
-      infectionODEs(popv, initial.infected, vaccine_calendar, contacts,
-                    susceptibility = c(parameters[6], parameters[6], parameters[6], parameters[7], parameters[7], parameters[8]),
-                    transmissibility = parameters[5],
-                    infection_delays = c(0.8,1.8), interval = 1,
-                    waning_rate = waning_rate,
-                    initial_vaccinated_prop = pv_input,
-                    initial_Rv_prop = pRv_input,
-                    year_to_run = year_to_run, efficacy_NH = efficacy_NH
-      )
-      
-      
-    }
+  initial.infected <- rep(0, num_age_groups)
+  
+  initial.infected <- stratify_by_risk(initial.infected, risk_ratios_input)
+  
+  if(is.null(names(vaccination_ratio_input))){
+    pv_input <- vaccination_ratio_input
+    pRv_input <- vaccination_ratio_input
+  } else {
+    pv_input <- vaccination_ratio_input[grep(pattern = "prop_v", names(vaccination_ratio_input))]
+    pRv_input <-  vaccination_ratio_input[grep(pattern = "prop_Rv", names(vaccination_ratio_input))]
   }
-  if (is.null(nrow(parameters))) {
-    
-    if (missing(contact_ids_input)) {
-      
-      result <- incidence_function(vaccine_calendar, parameters, 
-                                   ...)
-    }
-    else {
-      
-      result <- incidence_function(vaccine_calendar, parameters, 
-                                   contact_ids_input, ...)
-      
-    }
-    # if (!missing(time_column) && !is.null(time_column)) 
-    #   result[[time_column]] <- NULL
-    # return(colSums(result))
-    return(result)
-  }
-  else {
-    if (missing(time_column)) 
-      time_column <- NULL
-    if (missing(contact_id_input)) {
-      
-      return(lapply(parameters, function(pars) vaccination_scenario(parameters = pars, 
-                                                                    vaccine_calendar = vaccine_calendar,
-                                                                    incidence_function = incidence_function, 
-                                                                    time_column = time_column, ...)))
-    }
-    else {
- 
-      pc <- cbind(parameters, contact_ids)
-      #print("it is here")
-      return(lapply(pc, function(pars_contacts) vaccination_scenario(parameters = pars_contacts[1:ncol(parameters)], 
-                                                                     contact_ids = pars_contacts[(ncol(parameters) + 
-                                                                                                    1):length(pars_contacts)],
-                                                                     vaccine_calendar = vaccine_calendar, 
-                                                                     incidence_function = incidence_function, time_column = time_column, 
-                                                                     ...)))
-    }
-  }
+  
+
+  infections_out <- infectionODEs(population_stratified, initial.infected, calendar_input, contacts_matrixformat,
+                susceptibility = c(sampled_parameters[6], sampled_parameters[6], sampled_parameters[6],
+                                   sampled_parameters[7], sampled_parameters[7], sampled_parameters[8]),
+                transmissibility = sampled_parameters[5],
+                infection_delays = c(0.8,1.8), interval = 1,
+                waning_rate = waning_rate,
+                initial_vaccinated_prop = pv_input,
+                initial_Rv_prop = pRv_input,
+                year_to_run = year_to_run,
+                efficacy_NH = efficacy_NH
+  )
+  
+  return(infections_out)
+
+
 }
 
 
+# this function loops over the posterior samples and creates runs for each. 
+vacc_model_1 <- function(demography_input, 
+                         calendar_input,
+                         waning_rate,
+                         vaccination_ratio_input,
+                         year_to_run,
+                         efficacy_NH) 
+{
+
+  vacc_model_out <- incidence_function(demography_input = demography_input,
+                                       calendar_input = calendar_input,
+                     sampled_parameters = rep(0,9), 
+                     waning_rate = waning_rate,
+                     vaccination_ratio_input = vaccination_ratio_input,
+                     year_to_run = year_to_run,
+                     efficacy_NH = efficacy_NH)
+  
+  
+  
+      return(vacc_model_out)
+    }
 
 
-#     Run the function that allows you to change vaccine coverage
+
+
+#Function that updates the coverage
 change_coverage <- function(data, final_uptake) {
   
   sums <- data[nrow(data),]
@@ -392,177 +330,46 @@ change_coverage <- function(data, final_uptake) {
   data
 }
 
-vaccination_scenario <- function (vaccine_calendar, parameters, contact_ids, incidence_function, 
-                                  time_column, parameter_map, vaccination_ratio_output,..., verbose = T) 
-{
-  
-  if (missing(incidence_function)) {
-    print("inside function")
-    uk_defaults <- F
-    no_risk_groups <- vaccine_calendar$no_risk_groups
-    no_age_groups <- vaccine_calendar$no_age_groups
-    no_parameters <- length(parameters)
-    if (!is.null(nrow(parameters))) 
-      no_parameters <- ncol(parameters)
-    if (no_risk_groups >= 2 && no_age_groups == 7 && no_parameters == 
-        9) 
-      uk_defaults <- T
-    dots <- list(...)
-    var_names <- names(dots)
-    if (!"polymod_data" %in% var_names) {
-      stop("No polymod_data set provided")
-    }
-    else {
-      polymod_data <- dots[["polymod_data"]]
-    }
-    if (missing(contact_ids)) {
-      stop("No contact_ids set provided")
-    }
-    if (!"demography" %in% var_names) {
-      stop("No demography provided, i.e. a vector with population size by age (starting at age is zero)")
-    }
-    else {
-      demography <- dots[["demography"]]
-    }
-    time_column = "Time"
-    if (missing(parameter_map)) {
-      if (uk_defaults) {
-        parameter_map <- parameter_mapping(epsilon = c(1, 
-                                                       1, 2, 2, 3), psi = 4, transmissibility = 5, 
-                                           susceptibility = c(6, 6, 6, 7, 7, 7, 8), initial_infected = 9)
-      }
-      else if (no_parameters == 2 * no_age_groups + 3) {
-        if (is.null(nrow(parameters))) 
-          parameter_map <- parameter_mapping(parameters = parameters)
-        else parameter_map <- parameter_mapping(parameters = parameters[1, 
-        ])
-      }
-      else {
-        stop("Missing parameter map")
-      }
-    }
-    incidence_function <- function(vaccine_calendar, parameters, 
-                                   contact_ids, ...) {
-      if (!"age_group_limits" %in% var_names) {
-        if (uk_defaults) {
-          if (verbose) 
-            warning("Missing age_group_limits, using default: c(1,5,15,25,45,65)")
-          age_group_limits <- c(1, 5, 15, 25, 45, 65)
-        }
-        else stop("Missing age_group_limits")
-      }
-      else {
-        age_group_limits <- dots[["age_group_limits"]]
-      }
-      contacts <- contact_matrix(as.matrix(polymod_data[contact_ids, 
-      ]), demography, age_group_limits)
-      age.groups <- stratify_by_age(demography, age_group_limits)
-      if (!"risk_ratios" %in% var_names) {
-        if (uk_defaults) {
-          risk_ratios <- matrix(c(0.021, 0.055, 0.098, 
-                                  0.087, 0.092, 0.183, 0.45, rep(0, no_age_groups * 
-                                                                   (no_risk_groups - 2))), ncol = 7, byrow = T)
-        }
-        else {
-          if (no_risk_groups > 1) 
-            stop("No risk ratios supplied.")
-          risk_ratios <- rep(1, no_age_groups)
-        }
-      }
-      else {
-        risk_ratios <- dots[["risk_ratios"]]
-      }
-      verbose <<- F
-      popv <- stratify_by_risk(age.groups, risk_ratios, 
-                               no_risk_groups)
-      initial.infected <- rep(10^parameters[parameter_map$initial_infected], 
-                              no_age_groups)
-      initial.infected <- stratify_by_risk(initial.infected, 
-                                           risk_ratios, no_risk_groups)
-      infectionODEs(popv, initial.infected, vaccine_calendar, 
-                    contacts, parameters[parameter_map$susceptibility], 
-                    transmissibility = parameters[parameter_map$transmissibility], 
-                    c(0.8, 1.8), 7)
-    }
-  }
-  if (is.null(nrow(parameters))) {
-    
-    if (missing(contact_ids)) {
-      result <- incidence_function(vaccine_calendar, parameters, 
-                                   ...)
-    }
-    else {
-      result <- incidence_function(vaccine_calendar, parameters, 
-                                   contact_ids, ...)
-    }
-    if (!missing(time_column) && !is.null(time_column)) 
-      # result[[time_column]] <- NULL
-      # return(colSums(result))
-      return((result))
-  }
-  else {
-    if (missing(time_column)) 
-      time_column <- NULL
-    if (missing(contact_ids)) {
-      return(apply(parameters, 1, function(pars)
-        vaccination_scenario(parameters = pars, 
-                             vaccine_calendar = vaccine_calendar, incidence_function = incidence_function, 
-                             time_column = time_column, ...)))
-    }
-    else {
-      pc <- cbind(parameters, contact_ids)
-      
-      return(t(apply(pc, 1, function(pars_contacts)
-        vaccination_scenario(parameters = pars_contacts[1:ncol(parameters)], 
-                             contact_ids = pars_contacts[(ncol(parameters) + 
-                                                            1):length(pars_contacts)],
-                             vaccine_calendar = vaccine_calendar, 
-                             incidence_function = incidence_function, time_column = time_column, 
-                             ...))))
-    }
-  }
-}
-
-
-age_population_1year <- function(population, old_proportions){
-  
+# age the population_stratified by 1 year
+age_population_stratified_1year <- function(population_stratified, old_proportions){
 
   # - proportion of the age group that will move into the next age group (proportion_ageing)
   proportion_ageing <- c()
-  # - relative population size of the age group (pop_weighting)
+  # - relative population_stratified size of the age group (pop_weighting)
   pop_weighting <- c()
   # storage 
   new_proportions_all <- c()
   # for each risk group 
+
   for(l in 1:3){
-    
+
     # - old proportions
     old_proportions_sub <- old_proportions[(l-1)*num_age_groups+(1:num_age_groups)]
-    population_sub <- population[l*(1:num_age_groups)]
+    population_stratified_sub <- population_stratified[l*(1:num_age_groups)]
     # vector for storing new proprotions
     new_proportions <- c()
     # for each age group
 
-    for(k in 1:(length(age_groups)+1)){
-      
+    for(k in 1:(length(age_groups_model)+1)){
+
       # specify end of each age group
-      if(k == (length(age_groups)+1)){
+      if(k == (length(age_groups_model)+1)){
         age_grp_end <-max_age } else {
-          age_grp_end <- age_groups[k]} 
-      # specify start of each ate group and calculate population weightings
+          age_grp_end <- age_groups_model[k]} 
+      # specify start of each ate group and calculate population_stratified weightings
       if(k==1){
         age_grp_start <- 0
         # length of age group
         age_grp_length <- age_grp_end-age_grp_start
-        #calculate relative population weighting - assumign in bottom same proprtion born
+        #calculate relative population_stratified weighting - assumign in bottom same proprtion born
         pop_weighting_temp <- 1/age_grp_length
         #age_grp_length_prev
         age_grp_length_prev <- 1
       } else {
-        age_grp_start <- age_groups[k-1]
+        age_grp_start <- age_groups_model[k-1]
         # length of age group
         age_grp_length <- age_grp_end-age_grp_start
-        # calculate relative population sizes (by length of age group)
+        # calculate relative population_stratified sizes (by length of age group)
         pop_weighting_temp <-c(age_grp_length_prev/age_grp_length)
         # save the previous one for next time
         age_grp_length_prev <- age_grp_length
@@ -571,7 +378,7 @@ age_population_1year <- function(population, old_proportions){
       # calculate the proportion ageing
       if(l==1){
         proportion_ageing <- c(proportion_ageing,(1/age_grp_length))
-        # calculate the relative population sizese
+        # calculate the relative population_stratified sizese
         pop_weighting <-c(pop_weighting,pop_weighting_temp) 
       }
       
@@ -608,8 +415,9 @@ age_population_1year <- function(population, old_proportions){
     }
     new_proportions_all <- c(new_proportions_all, new_proportions)
   }
-  
+
   new_proportions_all[is.nan(new_proportions_all)] <- 0
+  new_proportions_all[is.na(new_proportions_all)] <- 0
   if(any(new_proportions_all >1)){browser()}
   if(any(new_proportions_all >1)){stop("proportion in ageing is bigger than one!")}
   return(new_proportions_all)
