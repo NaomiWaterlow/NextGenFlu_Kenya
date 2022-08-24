@@ -21,7 +21,7 @@ for(epidemic in 1:length(epidemics_list)){
   flu_type <- epidemics_list[[epidemic]][["flutype"]]
   
   #specify the previous epidemic of that subtyoe, if there is one.
-  if(change_susceptibiltiy_switch != "OFF"){
+  if(change_susceptibility_switch != "OFF"){
     previous_epidemic <- epidemics_list[[epidemic]][["previous_epi"]]}else{
       previous_epidemic <- NA}
 
@@ -82,7 +82,7 @@ for(epidemic in 1:length(epidemics_list)){
     previous_summary[,time_since := year_in_question- year]
     # if not (no vaccine or current vaccine)
     # note down for later use
-    if(change_susceptibiltiy_switch == "FIXED_REDUCTION" &
+    if(change_susceptibility_switch == "FIXED_REDUCTION" &
        scenario != target_scenarios[1 ]& !is.na(previous_epidemic)){
       reduce_susceptibility <- T
     } else {reduce_susceptibility <- F}
@@ -129,7 +129,7 @@ for(epidemic in 1:length(epidemics_list)){
     }
     #Do the calculation of the change in sucseptibility for each version
  
-    if(change_susceptibiltiy_switch =="POP_ADD_WANING"){
+    if(change_susceptibility_switch =="POP_ADD_WANING"){
       current_summary2[,prop_change := (base_case_value-V1)/pop]
     } else {current_summary2[,prop_change := 1]}
     
