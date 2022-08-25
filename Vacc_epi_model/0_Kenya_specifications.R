@@ -9,14 +9,14 @@ library(ISOweek)
 
 # specify user input
 location <- "Kenya"
-posterior_sample_size <- 1000
+posterior_sample_size <- 10
 set.seed(100)
-target_scenarios <- c(1,4,28,53,75,122)
+ target_scenarios <- c(1,4,28,53,75,122)
 #coverage at 75%
 # target_scenarios <- c(1,12,36,61, 83, 130)
 exact_efficacies <- F
 
-name_run <- "default"#"POP_ADD_WANING" #"year_round"#"default"#"coverage"EXACT_EFF
+name_run <- "coverage"#"POP_ADD_WANING" #"year_round"#"default"#"coverage"EXACT_EFF
 use_presampled <- F
 save_samples <- F
 change_susceptibility_switch <- "OFF" # Can be OFF or POP_ADD_WANING or FIXED_REDUCTION

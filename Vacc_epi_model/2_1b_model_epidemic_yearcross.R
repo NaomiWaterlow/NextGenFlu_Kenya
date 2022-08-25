@@ -671,8 +671,8 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
     target_coverage <-  vaccine_scenarios[[scenario]][["coverage"]][i,2:15]
   }
   
-  new_coverage = change_coverage(matrix(rep(0,num_age_groups*2*length(dates)), 
-                                        ncol = num_age_groups*2),
+  new_coverage = change_coverage(matrix(rep(0,num_age_groups*3*length(dates)), 
+                                        ncol = num_age_groups*3),
                                  target_coverage)
   # specify the demography
   if(location == "Kenya"){
