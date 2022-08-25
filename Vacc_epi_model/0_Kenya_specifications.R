@@ -9,7 +9,7 @@ library(ISOweek)
 
 # specify user input
 location <- "Kenya"
-posterior_sample_size <- 10
+posterior_sample_size <- 1000
 set.seed(100)
 target_scenarios <- c(1,4,28,53,75,122)
 #coverage at 75%

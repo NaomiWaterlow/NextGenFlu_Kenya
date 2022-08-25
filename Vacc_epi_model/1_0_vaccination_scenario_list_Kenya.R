@@ -5,9 +5,6 @@
 # specify the number of days per year (leap years!)
 year_days <- c(365,365,365,366,365,365,365,366,365,365)
 
-
-
-
 H1_matches <- c(
   "2009_NH" = "MATCH",
   "2010_SH" = "MATCH",
@@ -98,9 +95,9 @@ campaigns <- list(
 # i.e. over one year in the year round scenario, and over the 3 months in the 3 month scenario
 # *0.8 as not vaccinating 5 to 6 year olds
 coverages <- list(
-  coverage_low = c(0.5,0.5*0.8,rep(0,10)),
-  coverage_mid = c(0.75,0.75*0.8,rep(0,10)),
-  coverage_high = c(0.9,0.9*0.8,rep(0,10))
+  coverage_low = c(0.5,0.5*0.8,rep(0,16)),
+  coverage_mid = c(0.75,0.75*0.8,rep(0,16)),
+  coverage_high = c(0.9,0.9*0.8,rep(0,16))
 )
 
 durations <- c(

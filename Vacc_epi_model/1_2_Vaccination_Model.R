@@ -49,15 +49,15 @@ for(scenario in target_scenarios){
          }
 
          # Input the relevant coverage
-         new_coverage = change_coverage(matrix(rep(0,num_age_groups*2*length(dates)), 
-                                               ncol = num_age_groups*2),
+         new_coverage = change_coverage(matrix(rep(0,num_age_groups*3*length(dates)), 
+                                               ncol = num_age_groups*3),
                                         target_coverage)
          # Udpate the vaccination calendar with the new inputs
          calendar_input = as_vaccination_calendar(efficacy = c(efficacy[,(i*2)-1]),
                                             dates = as.Date(dates),
                                             coverage = as.data.frame(new_coverage),
                                             no_age_groups = num_age_groups,
-                                            no_risk_groups = no_risk_groups+1)
+                                            no_risk_groups = 3)
          year_to_run <- year(dates[1])
          
          # work out vaccination adjustments based on what proportion of 0-5s vaccinated
