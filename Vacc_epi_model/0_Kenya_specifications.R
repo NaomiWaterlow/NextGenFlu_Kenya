@@ -27,12 +27,13 @@ end_first_year_vaccination <- "2011-03-01"
 num_parameters_posteriors <- 9
 transmisibility_location <- 5 # position in posterior of the transmissibility parameter
 infection_delays <- c(0.8,1.8)
+initial_infection_location <- 9
 
 ####### KENYA CONSTANTS ######
 
 # these are defined globally but called within various functions
 age_groups_model <- c(1, 6, 15, 20, 50)
-max_age <- 70
+max_age <- 66 # average life expectancy - used only for ageing out of the last compartment
 num_age_groups <- 6
 risk_ratios_input <- matrix(c(0, 0, 0, 0, 0, 0, 
                               0, 0, 0, 0, 0, 0),

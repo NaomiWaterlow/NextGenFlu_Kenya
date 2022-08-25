@@ -23,7 +23,7 @@ incidence_function_2 <- function(demography_input,
   
   population_stratified <- stratify_by_risk(age_group_sizes, risk_ratios_input)
 
-  initial_infected <- rep(10^parameters[9], num_age_groups)
+  initial_infected <- rep(10^parameters[initial_infection_location], num_age_groups)
   initial_infected <- stratify_by_risk(initial_infected, risk_ratios_input)
   
   susceptibility <- rep(1,num_age_groups)
@@ -38,8 +38,8 @@ incidence_function_2 <- function(demography_input,
                                    input_calendar = input_calendar,
                                    contacts_matrixformat,
                                    susceptibility = susceptibility, 
-                                   transmissibility = parameters[5],
-                                   infection_delays = c(0.8,1.8), interval = 1,
+                                   transmissibility = parameters[transmisibility_location],
+                                   infection_delays = infection_delays, interval = 1,
                                    waning_rate = waning_rate,
                                    initial_vaccinated_prop = unlist(vaccination_ratio_input[[1]]),
                                    initial_Rv_prop = unlist(vaccination_ratio_input[[2]]),
