@@ -17,11 +17,17 @@ target_scenarios <- c(1,4,28,53,75,122)
 exact_efficacies <- F
 
 name_run <- "default"#"POP_ADD_WANING" #"year_round"#"default"#"coverage"EXACT_EFF
-use_presampled <- T
+use_presampled <- F
 save_samples <- F
 change_susceptibility_switch <- "OFF" # Can be OFF or POP_ADD_WANING or FIXED_REDUCTION
 save_susceptibility <- T
 end_first_year_vaccination <- "2011-03-01"
+
+# Parameter details
+num_parameters_posteriors <- 9
+transmisibility_location <- 5 # position in posterior of the transmissibility parameter
+infection_delays <- c(0.8,1.8)
+
 ####### KENYA CONSTANTS ######
 
 # these are defined globally but called within various functions

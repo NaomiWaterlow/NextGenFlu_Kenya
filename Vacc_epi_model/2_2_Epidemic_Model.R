@@ -36,7 +36,7 @@ for(epidemic in 1:length(epidemics_list)){
                 file = here::here("Posteriors", paste0(begin_date, " to ", end_date, " ", flu_type, " ", "UK_presampled_suscchange", ".csv")))
     }
     posterior_subset <- posterior_samples[sample_set,2:10]
-    contact_ids <- as.matrix(posterior_samples[sample_set,12:579])
+    contact_ids_input <- as.matrix(posterior_samples[sample_set,12:579])
 
     
   } else if(location =="UK"){
@@ -47,7 +47,7 @@ for(epidemic in 1:length(epidemics_list)){
     posterior_samples <- inference.results.2013[[year_in_question]][[flu_type_short]]$batch
     sample_set <- sample(1:nrow(posterior_samples), size=posterior_sample_size)
     posterior_subset <- as.data.frame(posterior_samples[sample_set,])
-    contact_ids <- inference.results.2013[[year_in_question]][[flu_type_short]]$contact.ids[sample_set,]
+    contact_ids_input <- inference.results.2013[[year_in_question]][[flu_type_short]]$contact.ids[sample_set,]
   } else{stop("Unknown location! SHould be Kenya or UK")}
   
   posterior_subset[,"epidemic"] <- epidemic
@@ -88,10 +88,16 @@ for(epidemic in 1:length(epidemics_list)){
     } else {reduce_susceptibility <- F}
     
     
-    epidemic_infections <- run_epidemic_model_yearcross(vaccine_scenarios, year_in_question, begin_date, end_date,
-                                                        epidemics_list, epidemic, scenario,
+    epidemic_infections <- run_epidemic_model_yearcross(vaccine_scenarios,
+                                                        year_in_question,
+                                                        begin_date,
+                                                        end_date,
+                                                        epidemics_list,
+                                                        epidemic, scenario,
                                                         immunity_input =unlist(immunity_row),
-                                                        contact_ids, posterior_subset, flu_type,
+                                                        contact_ids_input,
+                                                        posterior_subset,
+                                                        flu_type,
                                                         year_to_run = years[year_in_question],
                                                         previous_summary = previous_summary[f_type == flu_type])
     
@@ -185,7 +191,7 @@ total_cases_time_temp$Year <- as.character(total_cases_time_temp$Year)
 total_cases_time_temp$Virus <- as.character(total_cases_time_temp$Virus)
 
 total_cases_time_temp$scenario <- factor(total_cases_time_temp$scenario,
-                                         levels=c("1", "4", "51", "53", "122"))
+                                         levels=c("1", "4","28", "53", "75" ,"122"))
 
 total_cases_time_temp <- as.data.frame(total_cases_time_temp)
 
@@ -193,31 +199,29 @@ total_cases_time_temp <- as.data.frame(total_cases_time_temp)
 total_cases_time_temp$epidemic <- as.character(total_cases_time_temp$epidemic)
 total_cases_time_temp <- data.table(total_cases_time_temp)
 # 
-# ghm<- total_cases_time_temp[]
-# 
-# total_cases_time_temp <- data.frame(total_cases_time_temp)
-# ghm$sample <- as.factor(ghm$sample)
-# ghm$scenario <- as.factor(ghm$scenario)
-# ghm$epidemic <- as.factor(ghm$epidemic)
-# ghm <- as.data.table(ghm)
-#  ghml <- ghm[epidemic ==25]
-#  ghml <- ghm[epidemic ==38]
-# ghm_m <- melt.data.table(ghml, id.vars = c("sample",  "epidemic", "scenario", "Date",
-#                                "Virus"), measure.vars = c("V1", "V2", "V3", "V4", "V5",
-#                                                           "V6", "V7"))
-#   #ghm_m <- ghm_m[sample %in% set_of_sampels]
-# ggplot(ghm_m,aes(x = Date, y = value,
-#                                  colour = scenario,
-#                                  group =sample)) +
-#   geom_path(alpha = 0.5) +
-#   facet_grid(variable~scenario, scales = "free_y") +
-#   theme_linedraw() +
-#   labs(x = "Date", y = "Total cases", title = paste0("Epidemic 3")) +
-#   theme(axis.title = element_text(size = 12),
-#         axis.text = element_text(size = 12)) +
-#   geom_vline(xintercept = as.Date("2013-12-12"), alpha = 0.4)
-# 
-# 
+ghm<- total_cases_time_temp[]
+
+total_cases_time_temp <- data.frame(total_cases_time_temp)
+ghm$sample <- as.factor(ghm$sample)
+ghm$scenario <- as.factor(ghm$scenario)
+ghm$epidemic <- as.factor(ghm$epidemic)
+ghm <- as.data.table(ghm)
+ghml <- ghm[epidemic==4]
+ghm_m <- melt.data.table(ghml, id.vars = c("sample",  "epidemic", "scenario", "Date",
+                               "Virus"), measure.vars = c("V1", "V2", "V3", "V4", "V5",
+                                                          "V6"))
+  #ghm_m <- ghm_m[sample %in% set_of_sampels]
+ggplot(ghm_m,aes(x = Date, y = value,
+                                 colour = scenario,
+                                 group =sample)) +
+  geom_path(alpha = 0.5) +
+  facet_grid(variable~scenario, scales = "free_y") +
+  theme_linedraw() +
+  labs(x = "Date", y = "Total cases", title = paste0("Epidemic 3")) +
+  theme(axis.title = element_text(size = 12),
+        axis.text = element_text(size = 12)) +
+  geom_vline(xintercept = as.Date("2013-12-12"), alpha = 0.4)
+
 # total_cases_time_temp2 <- total_cases_time_temp#[1:14000,]
 # 
 # 

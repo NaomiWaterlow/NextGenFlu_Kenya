@@ -136,8 +136,6 @@ infectionODEs <- function(population_stratified, initial_infected, calendar_inpu
   t <- as.numeric(seq(begin_date, end_date, interval))
   
   no_groups <- length(population_stratified)
-  no_age_groups <- length(age_groups_model)
-  
   
   # adds a new top row, with the start date od simulation and 0 vaccination
   calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),1:nrow(calendar_input$calendar)),]
@@ -146,8 +144,8 @@ infectionODEs <- function(population_stratified, initial_infected, calendar_inpu
   calendar_input$calendar <- calendar_input$calendar[-2,]}
   # Run the model over the first 6 months
   # age the vaccinated population_stratified by 1 year. 
-  initial_vaccinated_prop <- age_population_stratified_1year(population_stratified, old_proportions=initial_vaccinated_prop)
-  initial_Rv_prop <- age_population_stratified_1year(population_stratified, old_proportions = initial_Rv_prop)
+  initial_vaccinated_prop <- age_population_1year(population_stratified, old_proportions=initial_vaccinated_prop)
+  initial_Rv_prop <- age_population_1year(population_stratified, old_proportions = initial_Rv_prop)
   #Assume that all R become susceptible again at the end of the year.
   initial_R_prop <- rep(0,no_groups)
   
@@ -256,9 +254,9 @@ incidence_function <- function(demography_input,
   age_group_sizes <- stratify_by_age(demography_input, age_groups_model)
   population_stratified <- stratify_by_risk(age_group_sizes, risk_ratios_input)
 
-  initial.infected <- rep(0, num_age_groups)
+  initial_infected <- rep(0, num_age_groups)
   
-  initial.infected <- stratify_by_risk(initial.infected, risk_ratios_input)
+  initial_infected <- stratify_by_risk(initial_infected, risk_ratios_input)
   
   if(is.null(names(vaccination_ratio_input))){
     pv_input <- vaccination_ratio_input
@@ -268,12 +266,15 @@ incidence_function <- function(demography_input,
     pRv_input <-  vaccination_ratio_input[grep(pattern = "prop_Rv", names(vaccination_ratio_input))]
   }
   
-
-  infections_out <- infectionODEs(population_stratified, initial.infected, calendar_input, contacts_matrixformat,
-                susceptibility = c(sampled_parameters[6], sampled_parameters[6], sampled_parameters[6],
-                                   sampled_parameters[7], sampled_parameters[7], sampled_parameters[8]),
-                transmissibility = sampled_parameters[5],
-                infection_delays = c(0.8,1.8), interval = 1,
+  susceptibility <- rep(1,num_age_groups)
+  
+  for(sus_i in 1:num_age_groups){
+    susceptibility[sus_i] <-  sampled_parameters[susceptibility_pattern[sus_i]]
+  }
+  infections_out <- infectionODEs(population_stratified, initial_infected, calendar_input, contacts_matrixformat,
+                susceptibility = susceptibility,
+                transmissibility = sampled_parameters[transmisibility_location],
+                infection_delays = infection_delays, interval = 1,
                 waning_rate = waning_rate,
                 initial_vaccinated_prop = pv_input,
                 initial_Rv_prop = pRv_input,
@@ -298,7 +299,7 @@ vacc_model_1 <- function(demography_input,
 
   vacc_model_out <- incidence_function(demography_input = demography_input,
                                        calendar_input = calendar_input,
-                     sampled_parameters = rep(0,9), 
+                     sampled_parameters = rep(0,num_parameters_posteriors), 
                      waning_rate = waning_rate,
                      vaccination_ratio_input = vaccination_ratio_input,
                      year_to_run = year_to_run,
@@ -331,7 +332,7 @@ change_coverage <- function(data, final_uptake) {
 }
 
 # age the population_stratified by 1 year
-age_population_stratified_1year <- function(population_stratified, old_proportions){
+age_population_1year <- function(population_stratified, old_proportions){
 
   # - proportion of the age group that will move into the next age group (proportion_ageing)
   proportion_ageing <- c()
@@ -340,7 +341,7 @@ age_population_stratified_1year <- function(population_stratified, old_proportio
   # storage 
   new_proportions_all <- c()
   # for each risk group 
-
+# browser()
   for(l in 1:3){
 
     # - old proportions
