@@ -76,7 +76,7 @@ SUMMARY <- ggplot(summary_table2, aes(x = as.Date(Date, origin = "1970-01-01")))
   facet_grid(.~scenario_nice2) + 
   theme_bw() +
   scale_fill_manual(values = c("#d73027","orange1", "#91CF60", "#92C5DE", "#3288BD","purple" )) +
-  labs(x = "Date", y = "Cumulative Infections", fill = "Vaccine", title = "B") + 
+  labs(x = "Date", y = "Cumulative Infections", fill = "Vaccine", title = "") + 
   theme(axis.title = element_text(size = 12), 
         axis.text = element_text(size = 12), 
         strip.text = element_text(size = 12), 

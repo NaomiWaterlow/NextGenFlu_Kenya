@@ -256,9 +256,9 @@ plot_subset$Date <- as.Date(plot_subset$Date, origin = "1970-01-01")
                legend.text = element_text(size=15),
                legend.title = element_text(size=15))
    
- # tiff(here::here(paste0(name_run,"_immunity.tiff")), height = 2000, width = 3000, res = 300)
- # IMMUNITY
- # dev.off()
+ tiff(here::here(paste0(name_run,"_immunity.tiff")), height = 2000, width = 3000, res = 300)
+ IMMUNITY
+ dev.off()
 
 # plot the percentage of whole population administered a vaccine over the year
 ggplot(plot_subset, aes(x = Date, y = total_vacc, colour = age_group)) + 

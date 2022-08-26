@@ -131,7 +131,7 @@ for(epidemic in 1:length(epidemics_list)){
     # add the population sizes
     for(ypl in 1:length(columns_to_sum)){
       label <- columns_to_sum[ypl]
-      current_summary2[variable == label, pop := as.numeric(population[1,ypl]) ]
+      current_summary2[variable == label, pop := as.numeric(population2[1,ypl]) ]
     }
     #Do the calculation of the change in sucseptibility for each version
  
