@@ -142,7 +142,7 @@ vaccine_scenarios[[1]] <- list(waning_rate = 1,
                       efficacy_H1 = matrix(0,nrow=18,ncol=21),
                       efficacy_B = matrix(0,nrow=18,ncol=21), 
                       dates = c("-03-02"),  # all year round
-                      coverage = rep(0,12), 
+                      coverage = rep(0,18), 
                       prop_group_vacc = rep(0,6))
 
 

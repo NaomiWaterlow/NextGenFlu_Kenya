@@ -2,7 +2,7 @@
 # the incidence function
 incidence_function_2 <- function(demography_input, 
                                parameters,
-                               input_calendar,
+                               calendar_input,
                                contact_ids_sample,
                                waning_rate,
                                vaccination_ratio_input,
@@ -35,7 +35,7 @@ incidence_function_2 <- function(demography_input,
  
   infectionODEs_epidemic_yearcross(population_stratified = population_stratified, 
                                    initial_infected = initial_infected, 
-                                   input_calendar = input_calendar,
+                                   calendar_input = calendar_input,
                                    contacts_matrixformat,
                                    susceptibility = susceptibility, 
                                    transmissibility = parameters[transmisibility_location],
@@ -59,7 +59,7 @@ incidence_function_2 <- function(demography_input,
 
 # function to set up infection model - adapted from Js cocd
 epidemic_scenarios_yearcross <- function (demography_input, 
-                                          input_calendar,
+                                          calendar_input,
                                           contact_ids_input,
                                           parameters,
                                           vaccination_ratio_input,
@@ -80,7 +80,7 @@ epidemic_scenarios_yearcross <- function (demography_input,
   epi_out <- apply(pc, 1,function(pars_contacts) 
     incidence_function_2(demography_input = demography_input, 
                        parameters = pars_contacts[1:ncol(parameters)],
-                       input_calendar = input_calendar,
+                       calendar_input = calendar_input,
                        contact_ids_sample = pars_contacts[(ncol(parameters)+1):ncol(pc)],
                        waning_rate = waning_rate,
                        vaccination_ratio_input = vaccination_ratio_input,
@@ -100,7 +100,7 @@ epidemic_scenarios_yearcross <- function (demography_input,
 
 infectionODEs_epidemic_yearcross <- function(population_stratified,
                                              initial_infected, 
-                                             input_calendar,
+                                             calendar_input,
                                              contacts_matrixformat,
                                              susceptibility, transmissibility, infection_delays, interval 
                                              ,waning_rate, initial_vaccinated_prop, initial_Rv_prop, initial_R_prop,
@@ -109,6 +109,7 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                              efficacy_now, efficacy_next, efficacy_next2, 
                                              previous_summary, ...
 ) {
+
   
   if(change_susceptibility_switch == "POP_ADD_WANING"){
     
@@ -116,11 +117,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
     # check that a previous epdiemic existed, else 0
     
     if(!all(is.na(previous_summary))){
-      
+
       previous_summary[, actual_change := prop_change]
-      susc_change = unlist(previous_summary[sample==unique(previous_summary$sample)
-                                            [sample_counter],"actual_change"])
-      
+      susc_change = unlist(previous_summary[sample==unique(previous_summary$sample)[sample_counter],"actual_change"])
+
     } else {susc_change = 0}
     # work out the appropiate susceptibility
     
@@ -131,7 +131,6 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
       susceptibility = susceptibility + add_amount
     }
   }
-  
   
   if(change_susceptibility_switch == "FIXED_REDUCTION" & 
      reduce_susceptibility == T){
@@ -176,24 +175,40 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
       new_cij[lk:(lk + num_age_groups - 1), ll:(ll + num_age_groups - 1)] <- contacts_matrixformat
     }
   }
+
   # extract the relevant dates from the calendar (i.e. exclude those before start time)
-  remaining_calendar <- which(input_calendar$dates > t[1])
-  if(length(remaining_calendar)>0){
-    temp <- input_calendar$dates[remaining_calendar]
-    input_calendar$calendar <- input_calendar$calendar[c(nrow(input_calendar$calendar),remaining_calendar),]
-  } else {
-    temp <- tail(t,1)
-    input_calendar$calendar <- input_calendar$calendar[c(nrow(input_calendar$calendar),
-                                          nrow(input_calendar$calendar)),]
-  }
-  # setup dates and efficacy
-  input_calendar$dates <- as.numeric(c(t[1], temp))
-  input_calendar$efficacy <- efficacy_now
+  #Update the vaccination calendar
+  keepers <- which(calendar_input$dates>= begin_date )
+  calendar_input$dates <- calendar_input$dates[keepers] 
   
+  # choose either the last date in the vaccine calendar or the last time in the times
+  if(!is.na(calendar_input$dates[1])){temp <- calendar_input$dates} else {temp <- tail(t,1)}
+  #specify the inputs dates as the time to start and the last date
+  input_dates <- c(t[1],temp)
+  # remove if it's the same dates
+  if(input_dates[1] == input_dates[2]){
+    input_dates <- input_dates[-1]
+    calendar_input$calendar <- calendar_input$calendar[c(keepers),]
+    # save back into the calendar
+    calendar_input$dates <- input_dates
+    calendar_input$efficacy <- efficacy_now
+  } else{
+    # save back into the calendar
+    calendar_input$dates <- input_dates
+    calendar_input$efficacy <- efficacy_now
+    if(length(input_dates)>2){
+      # add the last row (which is always 0) to the front, for the extra one.
+      #browser()
+      calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),keepers),]
+    } else{
+      calendar_input$calendar = matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
+      calendar_input$efficacy <- rep(0,num_age_groups*3)
+    } 
+  }
   #Assume that all R become susceptible again at the start of each posterior
   initial_R_prop <- rep(0,no_groups)
   # specify the model
-  
+ # browser()
   mod <- gen_seeiir_ag_vacc_waning$new(no_groups = no_groups,
                                        cij = new_cij,
                                        trans = transmissibility,
@@ -203,10 +218,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                        R0 = initial_R_prop,
                                        RV0 = initial_Rv_prop,
                                        susc = rep(susceptibility,3),
-                                       alpha = input_calendar$efficacy[1:no_groups],
+                                       alpha = calendar_input$efficacy[1:no_groups],
                                        omega = waning_rate,
-                                       dates = input_calendar$dates,
-                                       calendar = input_calendar$calendar[,1:no_groups],
+                                       dates = calendar_input$dates,
+                                       calendar = matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                        gamma1 = 2/infection_delays[1],
                                        gamma2 = 2/infection_delays[2], 
                                        num_vac_start = rep(0,no_groups) # don't need to be tracked
@@ -244,22 +259,33 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
   }
 
   #Update the vaccination calendar
-  keepers <- which(input_calendar$dates> begin_date & input_calendar$dates < tail(t,1))
-  input_calendar$dates <- input_calendar$dates[keepers] 
-  if(!is.na(input_calendar$dates[1])){ temp <- input_calendar$dates} else {temp <- tail(t,1)}
+  keepers <- which(calendar_input$dates>= begin_date )
+  calendar_input$dates <- calendar_input$dates[keepers] 
+  
+  # choose either the last date in the vaccine calendar or the last time in the times
+  if(!is.na(calendar_input$dates[1])){temp <- calendar_input$dates} else {temp <- tail(t,1)}
+  #specify the inputs dates as the time to start and the last date
   input_dates <- c(t[1],temp)
-  
-  # choose the correct efficacy and dates
-  input_calendar$dates <- input_dates
-  input_calendar$efficacy <- efficacy_next
-  # set the calenar to the appropiate dates if there are more than just a start and end date
-  if(length(input_dates)>2){
-    input_calendar$calendar <- input_calendar$calendar[c(nrow(input_calendar$calendar),keepers),]
+  # remove if it's the same dates
+  if(input_dates[1] == input_dates[2]){
+    input_dates <- input_dates[-1]
+    calendar_input$calendar <- calendar_input$calendar[c(keepers),]
+    # save back into the calendar
+    calendar_input$dates <- input_dates
+    calendar_input$efficacy <- efficacy_next
   } else{
-    input_calendar$calendar =matrix(rep(0,no_groups*length(input_dates)), ncol = no_groups)
-    input_calendar$efficacy <- rep(0,no_groups)
+    # save back into the calendar
+    calendar_input$dates <- input_dates
+    calendar_input$efficacy <- efficacy_next
+    if(length(input_dates)>2){
+      # add the last row (which is always 0) to the front, for the extra one.
+#browser()
+      calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),keepers),]
+    } else{
+      calendar_input$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
+      calendar_input$efficacy <- rep(0,num_age_groups*3)
+    } 
   }
-  
   
   # if one more NH season:   
   if(start_h == "NH" & double_trouble == F){
@@ -294,8 +320,9 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
     
     # all births start susceptible
     age_proportions[1,1] <- 1
-    #browser()
+   # browser()
     # specify the new model
+  #  browser()
     mod2 <- gen_seeiir_ag_vacc_waning_yearcross$new(no_groups = no_groups, cij = new_cij, trans = transmissibility,
                                                     pop = population_stratified,
                                                     allS = c(unlist(age_proportions[1,])),
@@ -312,10 +339,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                                     allIv2 = c(unlist(age_proportions[11,])),
                                                     allRv = c(unlist(age_proportions[12,])),
                                                     susc = rep(susceptibility,3),
-                                                    alpha = input_calendar$efficacy[1:no_groups],
+                                                    alpha = calendar_input$efficacy[1:no_groups],
                                                     omega = waning_rate,
-                                                    dates = input_calendar$dates,
-                                                    calendar = input_calendar$calendar[,1:no_groups],
+                                                    dates = calendar_input$dates,
+                                                    calendar = matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                                     gamma1 = 2/infection_delays[1],
                                                     gamma2 = 2/infection_delays[2], 
                                                     num_vac_start = rep(0,no_groups) # no need to track
@@ -328,8 +355,9 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
     
     # Else if there is one more southern hemisphere season ( no need to age)
   } else if (start_h == "SH" & double_trouble == F){
-    
+   # browser()
     # specify new model inputs
+
     mod2 <- gen_seeiir_ag_vacc_waning_NH$new(no_groups = no_groups, cij = new_cij, trans = transmissibility,
                                              pop = population_stratified,
                                              allS = y_tail[2:(1+no_groups)],
@@ -346,10 +374,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                              allIv2 = y_tail[(2+(11*no_groups)):(1+(12*no_groups))],
                                              allRv = y_tail[(2+(12*no_groups)):(1+(13*no_groups))],
                                              susc = rep(susceptibility,3),
-                                             alpha = input_calendar$efficacy[1:no_groups],
+                                             alpha = calendar_input$efficacy[1:no_groups],
                                              omega = waning_rate,
-                                             dates = input_calendar$dates,
-                                             calendar = input_calendar$calendar[,1:no_groups],
+                                             dates = calendar_input$dates,
+                                             calendar =  matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                              gamma1 = 2/infection_delays[1], gamma2 = 2/infection_delays[2], 
                                              num_vac_start = rep(0,no_groups) # no need to track
     )
@@ -360,7 +388,7 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
     
     # if next is SH followed by another Nothern hemisphere
   } else if (start_h == "SH" & double_trouble == T){
-    
+   # browser()
     # specify the new run
     mod2 <- gen_seeiir_ag_vacc_waning_NH$new(no_groups = no_groups, cij = new_cij, trans = transmissibility,
                                              pop = population_stratified,
@@ -378,10 +406,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                              allIv2 = y_tail[(2+(11*no_groups)):(1+(12*no_groups))],
                                              allRv = y_tail[(2+(12*no_groups)):(1+(13*no_groups))],
                                              susc = rep(susceptibility,3),
-                                             alpha = input_calendar$efficacy[1:no_groups],
+                                             alpha = calendar_input$efficacy[1:no_groups],
                                              omega = waning_rate,
-                                             dates = input_calendar$dates,
-                                             calendar = input_calendar$calendar[,1:no_groups],
+                                             dates = calendar_input$dates,
+                                             calendar = matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                              gamma1 = 2/infection_delays[1], gamma2 = 2/infection_delays[2], 
                                              num_vac_start = rep(0,no_groups) # no need to track
     )
@@ -434,19 +462,32 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
     begin_date <- as.Date(paste0(year_to_run+1, "-03-01"))
     t <- as.numeric(seq(begin_date, end_date2, interval))
     #Update the vaccination to NH
-    keepers <- which(input_calendar$dates> begin_date &input_calendar$dates < tail(t,1))
-    input_calendar$dates <- input_calendar$dates[keepers] 
-    if(!is.na(input_calendar$dates[1])){ temp <- input_calendar$dates} else {temp <- tail(t,1)}
+    keepers <- which(calendar_input$dates>= begin_date )
+    calendar_input$dates <- calendar_input$dates[keepers] 
+    
+    # choose either the last date in the vaccine calendar or the last time in the times
+    if(!is.na(calendar_input$dates[1])){temp <- calendar_input$dates} else {temp <- tail(t,1)}
+    #specify the inputs dates as the time to start and the last date
     input_dates <- c(t[1],temp)
-    if(input_dates[1] == input_dates[2]){input_dates <- input_dates[-1]}
-    # choose the correct efficacy
-    input_calendar$dates <- input_dates
-    input_calendar$efficacy <- efficacy_now
-    if(length(input_dates)>2){
-      input_calendar$calendar <- input_calendar$calendar[c(keepers[1]-1,keepers),]
+    # remove if it's the same dates
+    if(input_dates[1] == input_dates[2]){
+      input_dates <- input_dates[-1]
+      calendar_input$calendar <- calendar_input$calendar[c(keepers),]
+      # save back into the calendar
+      calendar_input$dates <- input_dates
+      calendar_input$efficacy <- efficacy_now
     } else{
-      input_calendar$calendar  <- matrix(rep(0,no_groups*length(input_dates)), ncol = no_groups)
-      input_calendar$efficacy <- rep(0,no_groups)
+      # save back into the calendar
+      calendar_input$dates <- input_dates
+      calendar_input$efficacy <- efficacy_now
+      if(length(input_dates)>2){
+        # add the last row (which is always 0) to the front, for the extra one.
+#browser()
+        calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),keepers),]
+      } else{
+        calendar_input$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
+        calendar_input$efficacy <- rep(0,num_age_groups*3)
+      } 
     }
     
     
@@ -467,10 +508,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                                     allIv2 = c(unlist(age_proportions[11,])),
                                                     allRv = c(unlist(age_proportions[12,])),
                                                     susc = rep(susceptibility,3),
-                                                    alpha = input_calendar$efficacy[1:no_groups],
+                                                    alpha = calendar_input$efficacy[1:no_groups],
                                                     omega = waning_rate,
-                                                    dates = input_calendar$dates,
-                                                    calendar = input_calendar$calendar,
+                                                    dates = calendar_input$dates,
+                                                    calendar = matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                                     gamma1 = 2/infection_delays[1],
                                                     gamma2 = 2/infection_delays[2], 
                                                     num_vac_start = rep(0,no_groups) # no need to track
@@ -535,10 +576,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                                     allIv2 = c(unlist(age_proportions[11,])),
                                                     allRv = c(unlist(age_proportions[12,])),
                                                     susc = rep(susceptibility,3),
-                                                    alpha = input_calendar$efficacy[1:no_groups],
+                                                    alpha = calendar_input$efficacy[1:no_groups],
                                                     omega = waning_rate,
-                                                    dates = input_calendar$dates,
-                                                    calendar = input_calendar$calendar[,1:no_groups],
+                                                    dates = calendar_input$dates,
+                                                    calendar = matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                                     gamma1 = 2/infection_delays[1],
                                                     gamma2 = 2/infection_delays[2], 
                                                     num_vac_start = rep(0,no_groups) # no need to track
@@ -556,24 +597,35 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
     begin_date <- as.Date(paste0(year(begin_date), "-09-01"))
     t <- as.numeric(seq(begin_date, end_date2, interval))
     #Update the vaccination to NH
-    keepers <- which(input_calendar$dates>= begin_date &input_calendar$dates < tail(t,1))
-    input_calendar$dates <- input_calendar$dates[keepers] 
-    if(!is.na(input_calendar$dates[1])){ temp <- input_calendar$dates} else {temp <- tail(t,1)}
-    input_dates <- c(t[1],temp)
-    # don't run if its for less than a week
-    if(input_dates[1] != input_dates[2]){
-      # choose the correct efficacy
-      input_calendar$efficacy <- efficacy_now
-      input_calendar$dates <- input_dates
-      
-      if(length(input_dates)>2){
-        input_calendar$calendar <- input_calendar$calendar[c(keepers[1]-1,keepers),]
-      } else{
-        input_calendar$calendar =matrix(rep(0,no_groups*length(input_dates)), ncol = no_groups)
-        input_calendar$efficacy <- rep(0,no_groups)
-      }
+    keepers <- which(calendar_input$dates>= begin_date )
+    calendar_input$dates <- calendar_input$dates[keepers] 
     
-      
+    # choose either the last date in the vaccine calendar or the last time in the times
+    if(!is.na(calendar_input$dates[1])){temp <- calendar_input$dates} else {temp <- tail(t,1)}
+    #specify the inputs dates as the time to start and the last date
+    input_dates <- c(t[1],temp)
+    # remove if it's the same dates
+    if(input_dates[1] == input_dates[2]){
+      input_dates <- input_dates[-1]
+      calendar_input$calendar <- calendar_input$calendar[c(keepers),]
+      # save back into the calendar
+      calendar_input$dates <- input_dates
+      calendar_input$efficacy <- efficacy_now
+    } else{
+      # save back into the calendar
+      calendar_input$dates <- input_dates
+      calendar_input$efficacy <- efficacy_now
+      if(length(input_dates)>2){
+        # add the last row (which is always 0) to the front, for the extra one.
+ #browser()
+        calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),keepers),]
+      } else{
+        calendar_input$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
+        calendar_input$efficacy <- rep(0,num_age_groups*3)
+      } 
+    }
+    
+     # browser()
       # set the model inputs again
       mod3 <- gen_seeiir_ag_vacc_waning_NH$new(no_groups = no_groups, cij = new_cij, trans = transmissibility,
                                                pop = population_stratified,
@@ -591,10 +643,10 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
                                                allIv2 = y2_tail[(2+(11*no_groups)):(1+(12*no_groups))],
                                                allRv = y2_tail[(2+(12*no_groups)):(1+(13*no_groups))],
                                                susc = rep(susceptibility,3),
-                                               alpha = input_calendar$efficacy[1:no_groups],
+                                               alpha = calendar_input$efficacy[1:no_groups],
                                                omega = waning_rate,
-                                               dates = input_calendar$dates,
-                                               calendar = input_calendar$calendar[,1:no_groups],
+                                               dates = calendar_input$dates,
+                                               calendar = matrix(calendar_input$calendar, ncol = num_age_groups*3),
                                                gamma1 = 2/infection_delays[1], gamma2 = 2/infection_delays[2],
                                                num_vac_start = rep(0,no_groups)
       )
@@ -602,7 +654,7 @@ infectionODEs_epidemic_yearcross <- function(population_stratified,
       y3 <- mod3$run(t, hmax = NULL, method = "euler", hini = 0.25, atol = 1)
       # combine with the previous output
       y <- rbind(y, y3[-1,])
-    }}
+    }
   
   
   # calculate the cumulative values
@@ -670,7 +722,7 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
   if(location == "UK"){
     target_coverage <-  vaccine_scenarios[[scenario]][["coverage"]][i,2:15]
   }
-  
+
   new_coverage = change_coverage(matrix(rep(0,num_age_groups*3*length(dates)), 
                                         ncol = num_age_groups*3),
                                  target_coverage)
@@ -711,23 +763,22 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
     efficacy_next <- vaccine_scenarios[[scenario]][["efficacy_B"]][,efficacy_now_spot+1]
     efficacy_next2 <- vaccine_scenarios[[scenario]][["efficacy_B"]][,efficacy_now_spot+2]
   }
-  
-  input_calendar = as_vaccination_calendar(efficacy = rep(0,3*num_age_groups)
+  calendar_input = as_vaccination_calendar(efficacy = rep(0,3*num_age_groups)
                                            , dates = as.Date(dates) 
                                            , coverage = as.data.frame(new_coverage)
                                            , no_age_groups = num_age_groups
-                                           , no_risk_groups = no_risk_groups+1)
+                                           , no_risk_groups = 3)
   
   # work out vaccination adjustments based on what proportion of 0-5s vaccinated
   # if not all dates fall within the first year
-  
-  if(!all(input_calendar$dates <= end_first_year_vaccination)){
+
+  if(!all(calendar_input$dates <= end_first_year_vaccination)){
     # identify at which time points the vaccination changes
-    change_time <- tail(which(input_calendar$dates <= end_first_year_vaccination),1)
+    change_time <- tail(which(calendar_input$dates <= end_first_year_vaccination),1)
     if(length(change_time)==0){change_time <- 1}
     # multiply the relevant vaccination time steps by the calendar
-    input_calendar$calendar[change_time:nrow(input_calendar$calendar),] <-
-      sweep(input_calendar$calendar[change_time:nrow(input_calendar$calendar),],
+    calendar_input$calendar[change_time:nrow(calendar_input$calendar),] <-
+      sweep(calendar_input$calendar[change_time:nrow(calendar_input$calendar),],
             MARGIN = 2, 
             rep(unlist(vaccine_scenarios[[scenario]]["prop_group_vacc"]),3),
             FUN="*")
@@ -745,7 +796,7 @@ run_epidemic_model_yearcross <- function(vaccine_scenarios, year_in_question, be
   total_infections_ages <- epidemic_scenarios_yearcross(demography_input = demography_input,
                                                         contact_ids_input = contact_ids_input,
                                                         parameters = posterior_subset,
-                                                        input_calendar = input_calendar, 
+                                                        calendar_input = calendar_input, 
                                                         waning_rate = waning_rate, 
                                                         vaccination_ratio_input = prop_vacc_start, 
                                                         begin_date = begin_date, 

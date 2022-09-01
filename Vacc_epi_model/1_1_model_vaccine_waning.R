@@ -176,16 +176,23 @@ infectionODEs <- function(population_stratified, initial_infected, calendar_inpu
   #specify the inputs dates as the time to start and the last date
   input_dates <- c(t[1],temp)
   # remove if it's the same dates
-  if(input_dates[1] == input_dates[2]){input_dates <- input_dates[-1]}
-  # save back into the calendar
-  calendar_input$dates <- input_dates
-  calendar_input$efficacy <- efficacy_NH
-# alter the efficacy and calendar as appropiate
-  if(length(input_dates)>2){
-    calendar_input$calendar <- calendar_input$calendar[c(keepers[1]-1,keepers),]
+  if(input_dates[1] == input_dates[2]){
+    input_dates <- input_dates[-1]
+    calendar_input$calendar <- calendar_input$calendar[c(keepers),]
+    # save back into the calendar
+    calendar_input$dates <- input_dates
+    calendar_input$efficacy <- efficacy_NH
   } else{
-    calendar_input$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
-    calendar_input$efficacy <- rep(0,num_age_groups*3)
+    # save back into the calendar
+    calendar_input$dates <- input_dates
+    calendar_input$efficacy <- efficacy_NH
+    if(length(input_dates)>2){
+      # add the last row (which is always 0) to the front, for the extra one.
+      calendar_input$calendar <- calendar_input$calendar[c(nrow(calendar_input$calendar),keepers),]
+    } else{
+      calendar_input$calendar =matrix(rep(0,num_age_groups*3*length(input_dates)), ncol = num_age_groups*3)
+      calendar_input$efficacy <- rep(0,num_age_groups*3)
+    } 
   }
   # carry on the runi
 
@@ -315,7 +322,7 @@ vacc_model_1 <- function(demography_input,
 
 #Function that updates the coverage
 change_coverage <- function(data, final_uptake) {
-  
+
   sums <- data[nrow(data),]
   # If final uptake is zero in a group then we need to make some kind of assumption on uptake rate over time
   if (any(sums == 0)) {
